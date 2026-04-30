@@ -744,6 +744,42 @@ set Nums[0][0] *= 42
 Nums[0][0] = 42
 ```
 
+Array concatenation with `+=` works on struct fields, nested fields,
+and collection values, just like regular `set` does:
+
+<!--versetest-->
+<!-- 35b -->
+```verse
+my_struct := struct<computes>:
+    X:[]int = array{}
+
+my_nested := struct<computes>:
+    Inner:my_struct = my_struct{}
+
+# Append to a struct field
+var S:my_struct = my_struct{}
+set S.X += array{1, 2, 3}
+S.X = array{1, 2, 3}
+
+# Append to a nested struct field
+var N:my_nested = my_nested{}
+set N.Inner.X += array{10, 20}
+N.Inner.X = array{10, 20}
+
+# Append to a map value
+var M:[int][]int = map{}
+set M[42] = array{}
+set M[42] += array{1}
+set M[42] += array{2}
+M[42] = array{1, 2}
+
+# Append to a nested array value
+var A:[][]int = array{array{}}
+set A[0] += array{1}
+set A[0] += array{2}
+A[0] = array{1, 2}
+```
+
 ### Tuple Mutability: Replacement Only
 
 Tuples can be replaced entirely but individual elements cannot be mutated:

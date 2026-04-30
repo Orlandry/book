@@ -421,6 +421,9 @@ set Y.Contents = X.Contents * 2
 The guard expression must have effects `<reads><computes><decides>`
 (see [Effects](13_effects.md))—it can read and compute but cannot
 write or allocate. This ensures re-evaluation is side-effect free.
+The body of `await` also cannot contain `branch` expressions, since
+`branch` requires a `<suspends>` context and the guard must remain
+side-effect free.
 
 ### The upon Expression
 

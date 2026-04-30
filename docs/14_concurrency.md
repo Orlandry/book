@@ -456,6 +456,52 @@ could lead to resource accumulation. If you need rush-like behavior in
 a loop, wrap it in an async function and call that function from your
 iteration.
 
+### Returning from Concurrent Arms
+
+A `return` statement inside a `sync`, `race`, or `rush` arm causes
+the enclosing *function* to return, not just the arm. The structured
+concurrency expression is abandoned, defers in arms that have already
+started execute, and arms that have not yet started are simply
+skipped.
+
+<!--versetest
+CoroUtils := module:
+    LogEvent(Msg:string):void = {}
+    GetEventLogString()<computes>:string = ""
+    WaitTicks(N:int)<suspends>:void = {}
+    Tick(N:int):void = {}
+-->
+<!-- 09b -->
+```verse
+Log(Msg:string):void = CoroUtils.LogEvent(Msg)
+
+MaybeReturn(Delay:int, Value:?string)<suspends>:string =
+    defer { Log("a") }
+    CoroUtils.WaitTicks(Delay)
+    if (V := Value?):
+        return V         # Returns from MaybeReturn
+    Log("done")
+    "no-return"
+
+Wrapper(Value:?string)<suspends>:string =
+    defer { Log("z") }
+    R := sync:
+        block:
+            MaybeReturn(0, Value)   # Arm 1
+        block:
+            defer { Log("b") }
+            CoroUtils.WaitTicks(1)
+            Log("2")
+            2
+    "{R(0)}"
+```
+
+When `Value` is set, arm 1 executes `return V` inside
+`MaybeReturn`. This exits `Wrapper` entirely — the `sync` is
+abandoned, arm 2 never completes, and defers run during unwinding.
+When `Value` is not set, arm 1 completes normally and `sync` waits
+for both arms to finish.
+
 ### The branch Expression
 
 The `branch` expression represents fire-and-forget concurrency within
@@ -1013,7 +1059,7 @@ BadDefer()<suspends>:void =
 
 This restriction is essential — if defer blocks could suspend, cleanup
 could be delayed indefinitely, defeating their purpose as guaranteed
-finalization. However, defer blocks *can* use `branch` or `spawn` for
+finalization. However, defer blocks *can* use `spawn` for
 fire-and-forget async operations.
 
 ## Timing Functions

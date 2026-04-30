@@ -1259,8 +1259,8 @@ to ensure predictable behavior:
 4. **Cannot fail:** Expressions in defer blocks cannot fail.
 
 5. **Cannot suspend directly:** Defer blocks cannot contain suspend
-   expressions, but they can use `branch` or `spawn` for
-   fire-and-forget async operations.
+   expressions, but they can use `spawn` for fire-and-forget async
+   operations.
 
 For how `defer` interacts with async cancellation and concurrency
 constructs like `race` and `spawn`, see

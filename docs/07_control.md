@@ -289,10 +289,8 @@ comparison:
 - **Enums**: Both open and closed enums
 - **Refinement types**: Custom types with constraints
 
-They do not work on `float`, objects and tuples because these types
-either don't have well-defined equality (`float` with `NaN`), lack value
-semantics (classes are references), or have structural complexity
-(tuples).
+They do not work on `float`, objects and tuples due to implementation
+limitations.
 
 **Exhaustiveness Checking with Enums.** `case` with `enum` are checked
 for exhaustiveness.  For closed enums where all values are known, the

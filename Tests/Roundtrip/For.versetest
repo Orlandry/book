@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert_roundtrip{for(x:xs) {print(x)}}
 assert_roundtrip{for(a, b, c) {d, e, f, g}}
 assert_roundtrip{for(key->value:xs) {key}}

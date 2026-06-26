@@ -16,6 +16,12 @@ assert:
     N.Array[set N.Array[1] = 13; 1] = 13
     N.Array[set N.Array = array{21, 34, 55}; 1] = 34
 
+# .Length on a native mutable array field exercises VNativeRef::GetLength.
+# See LengthOptimizationSafety.versetest for the full ref-type matrix.
+assert:
+    N := native_deeply_mutable{Array := array{3, 5, 8}}
+    N.Array.Length = 3
+
 # Non-native and native strings:
 
 assert:
@@ -45,6 +51,11 @@ assert:
     N.Map[set N.Map[1] = 13; 1] = 13
     N.Map[set N.Map[3] = 13; 3] = 13
     N.Map[set N.Map = map{0 => 21, 1 => 34, 2 => 55}; 1] = 34
+
+# .Length on a native mutable map field -- FMapProperty branch of GetLength.
+assert:
+    N := native_deeply_mutable{Map := map{0 => 3, 1 => 5, 2 => 8}}
+    N.Map.Length = 3
 
 # Native structs:
 

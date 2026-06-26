@@ -128,43 +128,53 @@ assert_valid:
     class1 := class<abstract>:
     class2 := class<concrete>(class1):
 
-<# TODO: Errors are suppressed because both modules are epic_internal. This is currently a specific carve-out. 
-   TODO: Fixing these tests involves creating a module that is outside of the normal epic-internal roots
-assert_semantic_error(3632):
+# <concrete> is rejected on an interface, which (unlike a class or struct) has no concrete form.
+assert_semantic_error(3596):
+    interface1 := interface<concrete> {}
+
+# On an interface, <abstract> and <concrete> are each individually invalid (two 3596s), rather than
+# the class's single abstract+concrete conflict (3632 above).
+assert_semantic_error(3596, 3596):
+    interface1 := interface<abstract><concrete> {}
+
+# Cross-module concrete inheritance from an abstract base no longer fires
+# ErrSemantic_AbstractConcreteClass (3632); the existing field/method
+# diagnostics (3519 etc.) catch any actual concreteness violations.
+
+assert_valid:
     class1 := class<abstract>:
     module1 := module:
         class2 := class<concrete>(class1):
 
-assert_semantic_error(3632):
+assert_valid:
     module1 := module:
         class1<public> := class<abstract>:
     class2 := class<concrete>(module1.class1):
 
-assert_semantic_error(3632):
+assert_valid:
     class1 := class<abstract>:
     module1 := module:
         module2 := module:
             class2 := class<concrete>(class1):
 
-assert_semantic_error(3632):
+assert_valid:
     module1 := module:
         module2<public> := module:
             class1<public> := class<abstract>:
     class2 := class<concrete>(module1.module2.class1):
 
-assert_semantic_error(3632):
+assert_valid:
     module1 := module:
         class1<public> := class<abstract>:
     module2 := module:
         class2 := class<concrete>(module1.class1):
 
-assert_semantic_error(3632):
+assert_valid:
     module1 := module:
         class1<public> := class<abstract>:
     module2 := module:
         class2 := class(module1.class1):
         class3 := class<concrete>(class2):
-#>
 
 assert_valid:
     class1 := class<abstract>:

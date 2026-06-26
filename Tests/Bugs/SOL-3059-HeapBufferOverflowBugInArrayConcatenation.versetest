@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 C := struct:
     # a brick of data
     value1:int = 0

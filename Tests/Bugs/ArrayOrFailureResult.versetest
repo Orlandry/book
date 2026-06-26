@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 super_class := class<unique>{}
 sub_class_a := class(super_class) {}
 sub_class_b := class(super_class):

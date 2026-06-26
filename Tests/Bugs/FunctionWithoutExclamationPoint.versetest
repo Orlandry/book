@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 C := class:
     # This asserts in the semantic analyzer:
     # ULANG_ASSERTF(TypeSpecNode.GetLhs()->GetElementType() = Ast::NodeType::Identifier, "LHS can only be identifier at this point.");

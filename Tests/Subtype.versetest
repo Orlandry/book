@@ -320,8 +320,9 @@ assert_digest_generated:
             F<public>(t:castable_concrete_subtype(class1)):void = {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
-            class1<public> := class:
-            F<public>(t:castable_concrete_subtype(class1)):void = external{}
+        # Verse path: /A
+        class1<public> := class:
+        F<public>(t:castable_concrete_subtype(class1)):void = external{}
 
 assert:
     X:concrete_subtype(CastableConcrete.class1) = CastableConcrete.class4

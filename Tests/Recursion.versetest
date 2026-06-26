@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Test a recursive function.
 fac_recursive(x:int):int=
     if(x <= 1) { return 1 }

@@ -51,3 +51,38 @@ assert_valid:
     interfase1 := interface{Foo():void}
     clazz12 := class<abstract>(interfase1){}
 
+# --- Interfaces ---
+
+# <abstract> is rejected on an interface type and on interface members; only a class may be abstract.
+assert_semantic_error(3596):
+    interfase2 := interface<abstract> {}
+
+assert_semantic_error(3596):
+    interfase3 := interface<abstract>{Method():int}
+
+assert_semantic_error(3596):
+    interfase4 := interface{Method<abstract>():int}
+
+assert_semantic_error(3596):
+    interfase5 := interface{Method<abstract>():int = 42}
+
+assert_semantic_error(3596):
+    interfase6 := interface{Value<abstract>:int}
+
+# --- Structs ---
+
+# <abstract> is rejected on a struct type and on struct members.
+assert_semantic_error(3596):
+    strukt1 := struct<abstract> {}
+
+assert_semantic_error(3596):
+    strukt2 := struct{Value<abstract>:int}
+
+# An interface requirement may be left unimplemented through an abstract class and satisfied by an
+# override in the first concrete subclass.
+assert_valid:
+    interfase7 := interface{Method():int}
+    clazz13 := class<abstract>(interfase7){}
+    clazz14 := class(clazz13):
+        Method<override>():int = 42
+

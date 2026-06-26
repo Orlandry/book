@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert_valid:
     super_class:=class:
         Variable:super_class

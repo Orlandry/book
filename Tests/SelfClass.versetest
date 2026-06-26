@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # self_class doesn't work anymore.
 assert_semantic_error(3506):
     foo := class:

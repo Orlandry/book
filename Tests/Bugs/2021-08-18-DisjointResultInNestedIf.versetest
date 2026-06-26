@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 F():void=
     if(true?) {}
     else if(true?) {0}

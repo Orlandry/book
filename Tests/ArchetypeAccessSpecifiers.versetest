@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Test that class<internal> forces folks outside the owning module to use a constructor function.
 Foo := module:
     my_class<public> := class<internal>{x<public>:int}

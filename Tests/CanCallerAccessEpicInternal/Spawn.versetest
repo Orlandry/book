@@ -1,0 +1,33 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Runtime `assert`s in explicit `vpackage`s (with specific scopes/VRI paths) cannot be relocated by
+# `--qualify-identifiers`, so skip that one variant; the tests still run in all other configurations.
+auto_qualify_todo{
+
+# Stresses CanCallerAccessEpicInternal across a spawn + event resume
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+vpackage(SpawnEpicLib, /Verse.org/CanCallerTest/SpawnLib, ?Scope:=InternalAPI, ?Dependencies:=("Verse/Verse")):
+    snippet:
+        PublicLib<public> := module:
+            Helper<public>()<transacts>:logic = CanCallerAccessEpicInternal()
+
+vpackage(SpawnUser, /NotVerse.org/CanCallerTest/Spawn, ?Dependencies:=(SpawnEpicLib, "Verse/Verse")):
+    vmodule(SpawnMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/SpawnLib/PublicLib }
+
+            AwaitThenCheck(Event:event())<suspends>:void =
+                Event.Await()
+                if (Helper()?):
+                    Err("resumed creator coroutine should NOT have epic_internal access")
+
+            Trigger(Event:event()):void =
+                spawn:
+                    AwaitThenCheck(Event)
+                Event.Signal()
+
+            assert:
+                MyEvent := event() {}
+                Trigger(MyEvent)
+}

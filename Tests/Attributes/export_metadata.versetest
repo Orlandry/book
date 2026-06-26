@@ -1,0 +1,135 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+using { /Verse.org/Diagnostics }
+using { /Verse.org/Native }
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+# Use sites use ":?Foo = false" -- ":Foo = Foo{}" trips V3512 (transacts at
+# module scope) and fires Identifier_Class twice.
+
+# V3697: Category contains '|'
+assert_semantic_error(3697):
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "Has|Pipe", Key := "K", Value := ""}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# V3697: Key contains '|'
+assert_semantic_error(3697):
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "Cat", Key := "Has|Pipe", Value := ""}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# V3697: Value contains '|'
+assert_semantic_error(3697):
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "Cat", Key := "K", Value := "args=track:t|1;"}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# V3698: Category is the empty string literal.
+assert_semantic_error(3698):
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "", Key := "K", Value := ""}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# V3698: Key is the empty string literal.
+assert_semantic_error(3698):
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "Cat", Key := "", Value := ""}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# V3698: Value is not a string literal (variable reference).
+assert_semantic_error(3698):
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            X<public>:string = "x"
+            @export_metadata{Category := "Cat", Key := "K", Value := X}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# Missing-field-entirely is not exercised here: compiler's archetype-completeness
+# check (V3600) fires before our V3698.
+
+# Positive: V1 payload.
+assert_valid:
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "PublishingMutators", Key := "TestKey", Value := ""}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# Positive: V2 payload.
+assert_valid:
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "PublishingMutators", Key := "RaceMutator", Value := "args=track:t1,laps:3;"}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false
+
+# Positive: malformed attribute on an unreferenced type produces no glitch.
+assert_valid:
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata{Category := "Has|Pipe", Key := "K", Value := ""}
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            Unrelated<public>:int = 7
+
+# Wrong invocation forms. Bare form is asserted; @export_metadata(args) and
+# @export_metadata{WrongName := ...} both trip a pre-existing handled ensure in
+# ~CLogicalScope (SemanticScope.cpp:843) -- not asserted, tracked separately.
+
+# Bare @export_metadata.
+assert_valid:
+    vpackage(P0, /Verse.org/Decl, ?Scope := PublicAPI):
+        snippet:
+            using { /Verse.org/Diagnostics }
+            @export_metadata
+            Foo<public> := class {}
+    vpackage(P1, /Use, ?Scope := PublicUser, ?Dependencies := (P0)):
+        snippet:
+            using { /Verse.org/Decl }
+            UseFoo<public>:?Foo = false

@@ -86,3 +86,97 @@ assert_valid(?ExpectUseOfExperimentalDefinition:=false):
 assert_valid(?ExpectUseOfExperimentalDefinition:=true):
     vpackage(P0, /Verse.org/A, ?Scope:=PublicAPI   , ?AllowExperimental:=true                     ){snippet{@experimental experimental_class<public> := class{}}}
     vpackage(P1, /Verse.org/B, ?Scope:=InternalUser, ?AllowExperimental:=true, ?Dependencies:=(P0)){snippet{F(:A.experimental_class):void={}}}
+
+# -----------------------------------------------------------------------
+# Experimental modules
+#
+# @experimental on a module propagates down to every definition the module
+# (transitively) contains, but not up to an enclosing module. A use of the
+# module - or of any of its members, even members that are not themselves
+# marked - is a use of an experimental definition.
+# -----------------------------------------------------------------------
+
+# `using` an experimental module is itself a use of an experimental definition.
+assert_semantic_error(2304):
+    vpackage(P, /Verse.org/A, ?Scope:=PublicAPI, ?AllowExperimental:=false):
+        snippet:
+            @experimental
+            experimental_module := module{}
+            using{experimental_module}
+
+assert_valid:
+    vpackage(P, /Verse.org/A, ?Scope:=PublicAPI, ?AllowExperimental:=true):
+        snippet:
+            @experimental
+            experimental_module := module{}
+            using{experimental_module}
+
+# `import` of an experimental module is a use of an experimental definition.
+assert_semantic_error(2304):
+    vpackage(P, /Verse.org/A, ?Scope:=PublicAPI, ?AllowExperimental:=false):
+        snippet:
+            @experimental
+            experimental_module<public> := module{}
+            Alias := import(/Verse.org/A/experimental_module)
+
+# A member of an experimental module counts as experimental even though the member
+# itself is not marked (propagation). AllowExperimental:=true suppresses the publish
+# warning, so this asserts the use is still *tracked* as experimental.
+assert_valid(?ExpectUseOfExperimentalDefinition:=true):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser, ?AllowExperimental:=true):
+        snippet:
+            @experimental
+            experimental_module<public> := module:
+                NotMarked<public>():void={}
+            Foo():void = experimental_module.NotMarked()
+
+# A nested child module inherits experimental from the outer module.
+assert_valid(?ExpectUseOfExperimentalDefinition:=true):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser, ?AllowExperimental:=true):
+        snippet:
+            @experimental
+            outer<public> := module:
+                inner<public> := module:
+                    NotMarked<public>():void={}
+            Foo():void = outer.inner.NotMarked()
+
+# The enclosing module is NOT made experimental by marking an inner module: a sibling
+# defined in the outer module is not a use of an experimental definition.
+assert_valid(?ExpectUseOfExperimentalDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser, ?AllowExperimental:=true):
+        snippet:
+            outer<public> := module:
+                @experimental
+                inner<public> := module{}
+                NotExperimental<public>():void={}
+            Foo():void = outer.NotExperimental()
+
+# Cross-package: bringing an experimental module from a dependency into scope is a use
+# of an experimental definition (the path-literal `using` resolves only the leaf module,
+# so exactly one warning is produced).
+assert_semantic_error(2304):
+    vpackage(PA, /Verse.org/A, ?Scope:=PublicAPI, ?AllowExperimental:=true):
+        snippet:
+            @experimental
+            experimental_module<public> := module:
+                F<public>():void={}
+    vpackage(PB, /B, ?Scope:=PublicAPI, ?AllowExperimental:=false, ?Dependencies:=(PA)):
+        snippet:
+            using{/Verse.org/A/experimental_module}
+
+# Use of an experimental module's member from within that same experimental module is
+# allowed - experimental code may freely use its own experimental siblings.
+assert_valid:
+    vpackage(P, /Verse.org/A, ?Scope:=PublicAPI, ?AllowExperimental:=false):
+        snippet:
+            @experimental
+            experimental_module := module:
+                Helper<public>():void={}
+                Caller<public>():void = Helper()
+
+# Propagation also covers non-module containers: a method call on an instance of an
+# @experimental class is itself a use of an experimental definition, even though the
+# method carries no @experimental of its own. Two V2304 fire: one on the parameter type
+# `:experimental_class` (direct attribute), one on `C.Foo()` (Foo's experimental source
+# is experimental_class via propagation).
+assert_semantic_error(2304, 2304){vpackage(P, /Verse.org/A, ?Scope:=PublicAPI, ?AllowExperimental:=false){snippet{@experimental experimental_class := class{Foo<public>():void={}}; F(C:experimental_class):void = C.Foo()}}}

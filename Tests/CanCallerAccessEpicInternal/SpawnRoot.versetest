@@ -1,0 +1,61 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Runtime `assert`s in explicit `vpackage`s (with specific scopes/VRI paths) cannot be relocated by
+# `--qualify-identifiers`, so skip that one variant; the tests still run in all other configurations.
+auto_qualify_todo{
+
+# a creator spawns a public Epic API directly, so the Epic API is the resumed task root and its caller (depth-2) is the spawn boundary
+# false on both VMs (VVM pivots across the yield to the creator spawner; BPVM stops at the yield and finds no Epic caller).
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+vpackage(SpawnRootEpicLib, /Verse.org/CanCallerTest/SpawnRootLib, ?Scope:=InternalAPI, ?Dependencies:=("Verse/Verse")):
+    snippet:
+        PublicLib<public> := module:
+            result_holder<public> := class:
+                var R<public>:logic = false
+            EpicApi<public>(H:result_holder, Event:event())<suspends>:void =
+                Event.Await()
+                set H.R = CanCallerAccessEpicInternal()
+            EpicSignal<public>(Event:event()):void = Event.Signal()
+
+vpackage(SpawnRootUser, /NotVerse.org/CanCallerTest/SpawnRoot, ?Dependencies:=(SpawnRootEpicLib, "Verse/Verse")):
+    vmodule(SpawnRootMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/SpawnRootLib/PublicLib }
+            assert:
+                H := result_holder{}
+                MyEvent := event() {}
+                spawn{ EpicApi(H, MyEvent) }
+                MyEvent.Signal()
+                not H.R?
+
+# An Epic package is the spawner of the same public Epic API. The two VMs diverge here: 
+# VVM resolves the caller across the spawn/yield boundary to the (Epic) spawner -> true
+# BPVM stops at the yield (no caller past the resumed task root) -> false
+vpackage(SpawnRootEpicSpawner, /Verse.org/CanCallerTest/SpawnRootEpicSpawner, ?Scope:=PublicAPI, ?Dependencies:=(SpawnRootEpicLib, "Verse/Verse")):
+    vmodule(SpawnRootEpicSpawnerMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/SpawnRootLib/PublicLib }
+            assert:
+                H := result_holder{}
+                MyEvent := event() {}
+                spawn{ EpicApi(H, MyEvent) }
+                MyEvent.Signal()
+                verse_vm_only:
+                    H.R?
+                bp_vm_only:
+                    not H.R?
+
+# A creator spawns the Epic API, but an Epic function (EpicSignal) is the one to resume it via Signal() -> false on both VMs
+vpackage(SpawnRootSignalUser, /NotVerse.org/CanCallerTest/SpawnRootSignal, ?Dependencies:=(SpawnRootEpicLib, "Verse/Verse")):
+    vmodule(SpawnRootSignalMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/SpawnRootLib/PublicLib }
+            assert:
+                H := result_holder{}
+                MyEvent := event() {}
+                spawn{ EpicApi(H, MyEvent) }
+                EpicSignal(MyEvent)
+                not H.R?
+}

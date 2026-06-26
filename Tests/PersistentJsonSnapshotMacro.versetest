@@ -1,0 +1,59 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Tests for `assert_persistence_snapshot`. FORT-1079606.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+assert_persistence_snapshot
+{
+    vpackage(P0, /A):
+        snippet:
+            snapshot_test_object := class<persistable><final><computes>:
+                Flag:logic
+                Count:int
+                Label:string
+        snippet:
+            Equal(Left:snapshot_test_object, Right:snapshot_test_object)<decides>:void =
+                Left.Flag = Right.Flag
+                Left.Count = Right.Count
+                Left.Label = Right.Label
+
+    serialized:
+        expected := snapshot_test_object:
+            Flag := true
+            Count := 1
+            Label := "skeleton"
+
+    deserialized(UploadedAtFNVersion := 4200):
+        "\{\"$package_name\":\"/SolIdeDataSources/_Verse\",\"$class_name\":\"snapshot_test_object\",\"x_Flag\":true,\"x_Count\":1,\"x_Label\":\"skeleton\"\}"
+}
+
+assert_persistence_snapshot
+{
+    vpackage(P0, /A):
+        snippet:
+            multi_snapshot_test_object := class<persistable><final><computes>:
+                Flag:logic
+                Count:int
+                Label:string
+        snippet:
+            Equal(Left:multi_snapshot_test_object, Right:multi_snapshot_test_object)<decides>:void =
+                Left.Flag = Right.Flag
+                Left.Count = Right.Count
+                Left.Label = Right.Label
+
+    serialized:
+        expected := multi_snapshot_test_object:
+            Flag := false
+            Count := 42
+            Label := "multi"
+
+    deserialized(UploadedAtFNVersion := 4100):
+        "\{\"$package_name\":\"/SolIdeDataSources/_Verse\",\"$class_name\":\"multi_snapshot_test_object\",\"x_Flag\":false,\"x_Count\":42,\"x_Label\":\"multi\"\}"
+
+    deserialized(UploadedAtFNVersion := 4110):
+        "\{\"$package_name\":\"/SolIdeDataSources/_Verse\",\"$class_name\":\"multi_snapshot_test_object\",\"x_Flag\":false,\"x_Count\":42,\"x_Label\":\"multi\"\}"
+
+    deserialized(UploadedAtFNVersion := 4200):
+        "\{\"$package_name\":\"/SolIdeDataSources/_Verse\",\"$class_name\":\"multi_snapshot_test_object\",\"x_Flag\":false,\"x_Count\":42,\"x_Label\":\"multi\"\}"
+}

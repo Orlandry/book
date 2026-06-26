@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # This erroneous code previously caused the compiler to get stuck in a loop until it ran out of memory.
 
 assert_semantic_error(3532,3532,3532):

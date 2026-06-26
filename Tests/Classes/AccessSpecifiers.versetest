@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # --- Public ---
 assert_valid
 {
@@ -424,6 +426,11 @@ assert_semantic_error(3593) {access_test_c22<epic_internal> := class{AccessTestX
 assert_semantic_error(3593) {access_test_c23<epic_internal> := class{AccessTestX<protected>:int}}
 assert_semantic_error(3593) {access_test_c24<epic_internal> := class{AccessTestX<private>:int}}
 assert_valid                {access_test_c25<epic_internal> := class{AccessTestX<epic_internal>:int}}
+
+# A default value waives the constructor-accessibility requirement: a protected/private member with a
+# default need not be as accessible as the constructor, since the caller no longer supplies it.
+assert_valid                {access_test_c26<epic_internal> := class{AccessTestX<protected>:int = 0}}
+assert_valid                {access_test_c27<epic_internal> := class{AccessTestX<private>:int = 0}}
 
 assert_valid:
     class1 := class<protected> {}

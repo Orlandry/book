@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 using { /Verse.org/Tests/VerseTestScriptCmd }
 
 # Verify that we cannot access null UObjects inside of a native class.

@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert_valid:
     C0 := class {}
     C1 := class:

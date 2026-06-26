@@ -1,0 +1,32 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Runtime `assert`s in explicit `vpackage`s (with specific scopes/VRI paths) cannot be relocated by
+# `--qualify-identifiers`, so skip that one variant; the tests still run in all other configurations.
+auto_qualify_todo{
+
+# A creator coroutine calls the public Epic helper; the runtime caller of the helper is
+# the creator coroutine body -> false on both VMs
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+vpackage(AsyncEpicLib, /Verse.org/CanCallerTest/AsyncLib, ?Scope:=InternalAPI, ?Dependencies:=("Verse/Verse")):
+    snippet:
+        PublicLib<public> := module:
+            Helper<public>()<transacts>:logic = CanCallerAccessEpicInternal()
+
+vpackage(AsyncUser, /NotVerse.org/CanCallerTest/Async, ?Dependencies:=(AsyncEpicLib, "Verse/Verse")):
+    vmodule(AsyncMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/AsyncLib/PublicLib }
+
+            result_holder := class:
+                var Result:logic = false
+
+            CreatorCoro(H:result_holder)<suspends>:void =
+                set H.Result = Helper()
+
+            assert:
+                H := result_holder{}
+                spawn{ CreatorCoro(H) }
+                not H.Result?
+}

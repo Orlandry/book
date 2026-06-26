@@ -169,7 +169,7 @@ assert_valid:
 
 # We relaxed some of the analysis around archetypes and interfaces.
 # Direct refernce to an interface as an archetype should still fail though
-assert_semantic_error(3545):
+assert_semantic_error(3502):
     iface := interface:
         Value:int = 42
     MainFunc():void=

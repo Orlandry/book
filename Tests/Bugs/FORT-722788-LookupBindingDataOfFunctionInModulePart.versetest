@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 my_class_thing<public> := class:
   var X:int = 55
 

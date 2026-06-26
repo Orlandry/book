@@ -1,0 +1,32 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+IsDebugStackTraceSupported()<computes>:logic =
+    bp_vm_only    { IsDebuggerEnabled() }
+    verse_vm_only { true }
+
+# Test stack crawls in the presence of spawned tasks and native transitions.
+AwaitEvent(Event:event())<suspends>:void =
+    Event.Await()
+    if (IsDebugStackTraceSupported()?):
+        Frames := DebugStackTrace()
+
+        if:
+            Frames[0] = "AwaitEvent(:(/Verse.org/Verse:)event(tuple())):13"
+            # BPVM stack crawls do not continue through yield frames
+            verse_vm_only { Frames[1] = "(/Verse.org/VerseTests:)TriggerEvent(:(/Verse.org/Verse:)event(tuple())):26" }
+            verse_vm_only { Frames[2] = "(/Verse.org/Verse/signalable:)Signal(:payload)" }
+            verse_vm_only { Frames[3] = "(/Verse.org/VerseTests:)TriggerEvent(:(/Verse.org/Verse:)event(tuple())):28" }
+            verse_vm_only { Frames[4] = "(/Verse.org/VerseTests/__TestScript:)assert0:30" }
+        else:
+            Err("stack crawl does not match expectations")
+
+TriggerEvent(Event:event()):void =
+    spawn:
+        AwaitEvent(Event)
+    Event.Signal()
+
+assert:
+    MyEvent := event() {}
+    TriggerEvent(MyEvent)

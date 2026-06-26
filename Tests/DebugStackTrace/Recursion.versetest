@@ -1,0 +1,24 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+IsDebugStackTraceSupported()<computes>:logic =
+    bp_vm_only    { IsDebuggerEnabled() }
+    verse_vm_only { true }
+
+# Recursion should display the `Recurse` method in the stack trace the correct number of times.
+Recurse(N:int, Limit:int)<decides>:void =
+    if (N >= Limit):
+        if (IsDebugStackTraceSupported()?):
+            Frames := DebugStackTrace()
+
+            # Count the number of recursion frames.
+            bp_vm_only    { ExpectedFrame := "(/Verse.org/VerseTests:)Recurse(:int,:int):20" }
+            verse_vm_only { ExpectedFrame := "(/Verse.org/VerseTests:)Recurse(:int,:int):10" }  # TODO(SOL-9406): VVM incorrectly uses function declaration line
+            RecursionFrames := for (Frame : Frames, Frame = ExpectedFrame). true
+            RecursionFrames.Length = 10
+    else:
+        Recurse[N + 1, Limit]
+
+assert:
+    Recurse[0, 10]

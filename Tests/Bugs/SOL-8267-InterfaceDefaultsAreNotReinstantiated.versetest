@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 using { /Verse.org/Tests/VerseTestScriptCmd }
 
 # The problem in SOL-8267 was that foo_1 and foo_2 share the same instance of bar.

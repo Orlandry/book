@@ -256,6 +256,24 @@ assert:
             constructor_invocation.class2{ Property2 := 21, let{ Temp := 3 }, constructor_invocation.MakeClass1<constructor>(Temp + 5) }.Property1)
     X.Property1 = 8
 
+# Delegating constructor call that references Self implicitly and explicitly
+delegating_constructor_captures := module:
+    foo<public> := class:
+        var X<public>:int = 3
+    CopyFoo<public><constructor>(Foo:foo, Y:int) := foo:
+        X := Foo.X + Y
+    bar<public> := class(foo):
+        Y<public>:int = 5
+        Copy<public>():bar = bar:
+            Y := 8
+            CopyFoo<constructor>(Self, Y)
+
+assert:
+    One := delegating_constructor_captures.bar{}
+    Two := One.Copy()
+    Two.X = 3 + 5
+    Two.Y = 8
+
 sub_before_sup := module:
     class2<public> := class(class1):
         Property2<public>:int

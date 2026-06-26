@@ -223,3 +223,15 @@ assert_semantic_error(3506):
         C1 : c1 = c1{}
         # `c1` is not a subtype of qualifier `c2`.
         C1.(c2:)F() = 8
+
+# Override exactly one of two super-interfaces that declare the same-named method; the other retains
+# its own default, reached through the qualified call.
+qual_iface_a := interface { Do<public>():int = 100 }
+qual_iface_b := interface { Do<public>():int = 200 }
+qual_override_one := class(qual_iface_a, qual_iface_b):
+    (qual_iface_a:)Do<override>():int = 300
+
+assert:
+    QualOne := qual_override_one{}
+    QualOne.(qual_iface_a:)Do() = 300
+    QualOne.(qual_iface_b:)Do() = 200

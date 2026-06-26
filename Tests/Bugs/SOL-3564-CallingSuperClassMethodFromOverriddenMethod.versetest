@@ -29,7 +29,7 @@ assert_semantic_error(2004):
 #-------------------
 # Unqualified function definition calling to an interface
 
-assert_valid:
+assert_semantic_error(2004):
     ia := interface:
         F():void
 
@@ -37,19 +37,19 @@ assert_valid:
         F<override>():void={}
 
     c := class(b):
-        F<override>():void= (ia:)F() # no warning because we assume the user intended the vcall
+        F<override>():void= (ia:)F() # 2004 - ia: is not the immediate base override
 
 
 #-------------------
 # Unqualified function definition calling to an interface over an abstract
-assert_valid:
+assert_semantic_error(2003):
     ia := interface:
         F():void
 
     b := class<abstract>(ia):
 
     c := class(b):
-        F<override>():void= (ia:)F() # no warning because we assume the user intended the vcall
+        F<override>():void= (ia:)F() # 2003 - should use super:
 
 
 #-------------------
@@ -147,13 +147,13 @@ assert_valid:
 
 
 #-------------------
-assert_semantic_error(3509):
+assert_semantic_error(2003, 3509):
     basest_interface := interface:
         Func():void
 
     base_class<public> := class(basest_interface):
         Func<override>():void=
-            (basest_interface:)Func();          # OK - vcalling the interface
+            (basest_interface:)Func();          # 2003 - should use super:
         Func<public>(a:int):void={}
 
     child_class := class(base_class):

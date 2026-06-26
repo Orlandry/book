@@ -1,0 +1,42 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+JoinMessageTests<public> := module:
+    ShouldPrintTest<public> : logic = false
+    JoinItemA<public><localizes> : message = "ItemA"
+    JoinItemB<public><localizes> : message = "ItemB"
+    JoinItemC<public><localizes> : message = "ItemC"
+    JoinItemD<public><localizes> : message = ""
+    JoinItemE<public><localizes> : message = "ItemE"
+    JoinItemF<public><localizes> : message = "F"
+    SeparatorA<public><localizes> : message = ","
+    SeparatorB<public><localizes> : message = ""
+    SeparatorC<public><localizes> : message = "\n"
+    
+    MakeDebugString<localizes>(Name:string, Message:message) : message = "Testing {Name}: \"{Message}\""
+    
+    AttemptJoinMessage<public>(Name:string, JoinMessage:message, ExpectedResult:string)<decides>:void=
+        Result := Localize(JoinMessage)
+        if (ShouldPrintTest?):
+            DebugPrint(Localize(MakeDebugString(Name, JoinMessage)))
+            DebugPrint(if (Result = ExpectedResult) then "Success!" else "Failure!")
+        Result = ExpectedResult
+        
+    func<public>()<decides>:void=
+        AttemptJoinMessage["JoinMessageA", Join(array{JoinItemA, JoinItemB, JoinItemC}, SeparatorA), "ItemA,ItemB,ItemC"]
+        AttemptJoinMessage["JoinMessageB", Join(array{JoinItemC, JoinItemD, JoinItemE}, SeparatorB), "ItemCItemE"]
+        AttemptJoinMessage["JoinMessageC", Join(array{JoinItemD, JoinItemE, JoinItemF, JoinItemA, JoinItemB}, SeparatorC), "\nItemE\nF\nItemA\nItemB"]
+        AttemptJoinMessage["JoinMessageEmpty", Join(array{}, SeparatorA), ""]
+        AttemptJoinMessage["JoinMessageSingle", Join(array{JoinItemA}, SeparatorC), Localize(JoinItemA)]
+        AttemptJoinMessage["JoinMessageManyEmpty", Join(array{JoinItemD, JoinItemD, JoinItemD, JoinItemD}, SeparatorB), ""]
+        AttemptJoinMessage["JoinMessageTwo", Join(array{JoinItemA, JoinItemB}, SeparatorA), "ItemA,ItemB"]
+        AttemptJoinMessage["JoinMessageSingleEmpty", Join(array{JoinItemD}, SeparatorA), ""]
+        AttemptJoinMessage["JoinMessageEmptyAtEnd", Join(array{JoinItemA, JoinItemD}, SeparatorA), "ItemA,"]
+        AttemptJoinMessage["JoinMessageEmptyAtStart", Join(array{JoinItemD, JoinItemA}, SeparatorA), ",ItemA"]
+        AttemptJoinMessage["JoinMessageTwoEmpty", Join(array{JoinItemD, JoinItemD}, SeparatorA), ","]
+        AttemptJoinMessage["JoinMessageAllSame", Join(array{JoinItemF, JoinItemF, JoinItemF}, SeparatorA), "F,F,F"]
+        AttemptJoinMessage["JoinMessageNoSeparator", Join(array{JoinItemA, JoinItemB, JoinItemC}, SeparatorB), "ItemAItemBItemC"]
+        
+assert:
+    JoinMessageTests.func[]

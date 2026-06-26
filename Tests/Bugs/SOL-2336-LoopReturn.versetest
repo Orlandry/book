@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 Foo(x:int):int =
     var y:int = 0
     loop:

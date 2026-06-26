@@ -126,6 +126,7 @@ assert_digest_generated
                 Data2<private>:?(t->void)=false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         public_interface<public>(t:type) := interface:
             @available {MinUploadedAtFNVersion := 4000}

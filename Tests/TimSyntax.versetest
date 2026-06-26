@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 <#>
     These tests were converted from Tim's parser test suite as of May 20, 2020.
     The tests that are commented out fail as of August 6, 2020.

@@ -342,7 +342,10 @@ assert_semantic_error<depends_on_library>(3509):
             temp:generator(int) := T.Method(A)
             if (temp=I) then 1 else 0
 
-# Generators are gated by UploadedFNAtVersion == 29.30
+# generator(T) parses at all FN versions; below FNv29.30 it silently downgrades
+# to plain []T. Low-FN packages cannot construct generator values (the only
+# producers are gated at the same version), and `for` iterates identically over
+# generator(T) and []T, so the conversion is semantics-preserving.
 assert_valid:
     vpackage(P0, /A):
         snippet:
@@ -356,17 +359,25 @@ assert_valid:
             M<public> := module:
                 GeneratorToArray(Arg:generator(t) where t:type):[]t = for (X:Arg) {X}
 
-assert_semantic_error(3506,3503,3524):
+# Below FNv29.30 - parses and downgrades to plain []t (was 3506/3503/3524 prior
+# to the downgrade).
+assert_valid:
     vpackage(P0, /A, ?UploadedAtFNVersion:=2920):
         snippet:
             M<public> := module:
                 GeneratorToArray(Arg:generator(t) where t:type):[]t = for (X:Arg) {X}
 
-assert_semantic_error(3506,3503,3524):
+# Below FNv29.30, the downgrade reaches actual call-site semantics: a parameter
+# typed `generator(int)` is really `[]int`, so an array literal satisfies it.
+assert_valid:
     vpackage(P0, /A, ?UploadedAtFNVersion:=2920):
         snippet:
             M<public> := module:
-                GeneratorToArray(Arg:generator(t) where t:type):[]t = for (X:Arg) {X}
+                Sum(Arg:generator(int)):int =
+                    var Total:int = 0
+                    for (X:Arg) { set Total = Total + X }
+                    Total
+                Caller():int = Sum(array{1, 2, 3})
 
 assert_semantic_error(2015):
     vpackage(P0, /A, ?UploadedAtFNVersion:=2920):
@@ -397,12 +408,26 @@ assert_semantic_error(2015):
                     generator:int = 42                      # variable named generator is ok in older versions
                     generatorFunction<public>(v:int):int = generator
 
+# Declaration of a function named `generator` is still legal at FNv29.20
+# (warning #2015 only, not error 3514).
 assert_semantic_error(2015):
     vpackage(P0, /A, ?UploadedAtFNVersion:=2920):
         snippet:
             M<public> := module:
                 generator():int = 42
-                func():int = generator()
+
+# ...but calling it is now shadowed by the AnalyzeInvocation downgrade: the
+# call site is reinterpreted as the array-type-former (with no element type),
+# producing additional type errors. This is the documented shadowing caveat
+# of the downgrade - same trade-off as the *_subtype trio. Authors who hit
+# this need to rename, which the existing #2015 warning has been nagging them
+# to do since FNv29.30 was scheduled.
+assert_semantic_error(2015, 3547, 3510):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=2920):
+        snippet:
+            M<public> := module:
+                generator():int = 42
+                func():int = generator()    # shadowed; () is not a type expression
 
 assert_semantic_error(2015):
     vpackage(P0, /A, ?UploadedAtFNVersion:=2920):
@@ -410,3 +435,21 @@ assert_semantic_error(2015):
             M<public> := module:
                 generator := class:     # 2015
                 foo:?generator = false
+
+# Symmetry with the FNv29.20 warning-only tests above: at or above FNv29.30 the
+# same user definitions are a hard error 3514 because `generator` is fully
+# reserved there. The data-definition routing site preserves its version gate
+# so user definitions remain reachable below FNv29.30.
+assert_semantic_error(3514):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=2930):
+        snippet:
+            generator<public> := module:
+                generatorClass := class:
+                    generatorFunc<public>(v:int):int = 42
+
+assert_semantic_error(3514):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=2930):
+        snippet:
+            generatorModule<public> := module:
+                generator := class:
+                    generatorFunc<public>(v:int):int = 42

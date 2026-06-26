@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 my_interface<public> := interface<internal>:
     Foo<public>(X:int):int
 

@@ -14,6 +14,8 @@ assert_digest_generated
                 Shadow<public>:int = 42
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /Verse.org/Test
+
         FooEnum<public> := enum<open>:
             # Lorem ipsum sit dolor amet
             (/Verse.org/Test/FooEnum:)Shadow

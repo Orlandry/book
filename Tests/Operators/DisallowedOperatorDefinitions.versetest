@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert_semantic_error(3514):
     t := class {}
     operator'<'(x:t, y:t)<transacts><decides>:void = {}

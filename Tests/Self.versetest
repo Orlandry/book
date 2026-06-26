@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 C:=class<unique>:
     X:int
     GetSelf():C= { return(Self); }

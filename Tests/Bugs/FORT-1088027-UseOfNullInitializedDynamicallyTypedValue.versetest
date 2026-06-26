@@ -1,0 +1,209 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+#
+# Tests for FORT-1088027: a BPVM-only NullType convert crash at
+# `VerseRuntimeType.h:97` in `task::Update`.
+#
+# Verified root cause: a bytecode-issued Signal during `task::Update`
+# synchronously re-enters Update for the same task via
+# `event::Signal → task::Complete → ResumeAt → task::Update`. In the
+# inner Update, race-winner / sync / rush / branch cleanup misroutes
+# control flow so that a typed-event awaiter's `$AsyncTask_X` slot is
+# replaced with a fresh task pointing at uninitialized memory while
+# the original awaiter remains stranded in `event.SuspendedAwaits`.
+# When the typed event later fires, the stale awaiter pops, the
+# listener resumes, and the cast at the await site reads the fresh
+# slot's uninitialized NullType `_RetVal` — convert crash.
+#
+# Tests in this file:
+#   1. Minimal repro (race)         — minimal race-only crash
+#   2. Minimal repro (branch+rush)  — same crash via EmitJumpIfResumed
+#                                     from rush/branch codegen
+#   3. Minimal repro (nested sync)  — same crash via EmitJumpIfResumed
+#                                     from sync codegen
+#   4. Root cause observation       — non-crashing test of the
+#                                     self-cancellation control flow
+#                                     that underlies the crash
+#   5. Production-shape repro       — preserves the production driver's
+#                                     multi-cycle, varied-signal pattern
+#                                     with generic identifiers
+
+using { /Verse.org/Tests/VerseTestScriptCmd } # CoroUtils
+
+payload := class:
+	var Done:int = 0
+	Do():void=
+		set Done += 1
+
+# Test 1 — A repro using a simplified form of the nested race in the live project where the crash was originally observed.
+c1 := class:
+	E0 : event() = event(){}
+	E1 : event(payload) = event(payload){}
+	E2 : event() = event(){}
+	E3 : event() = event(){}
+	var FirstIter : logic = true
+
+	Listener()<suspends>:void =
+		loop:
+			E0.Await()
+			race:
+				E2.Await()
+				block:
+					if (FirstIter?):
+						set FirstIter = false
+						E2.Signal()
+					E3.Await()
+				E1.Await().Do()
+
+verse_vm_only:
+	assert:
+		C0 := payload{}
+		C1 := c1{}
+		spawn { C1.Listener() }
+		C1.E0.Signal()
+		C1.E0.Signal()
+		C1.E1.Signal(C0)
+		C0.Done = 1
+
+
+# Test 2 — A repro using branch/rush.
+c2 := class:
+	E0 : event() = event(){}        # branch's awaited event
+	E1 : event() = event(){}
+	E2 : event(payload) = event(payload){}    # typed-event-Await (the crash site)
+	E3 : event() = event(){}        # never-signaled, keeps task alive
+
+	Listener()<suspends>:void =
+		branch:
+			E0.Await()
+		rush:
+			block:
+				E1.Await()
+				E0.Signal()
+			E2.Await().Do()
+		E3.Await()
+
+verse_vm_only:
+	assert:
+		C0 := payload{}
+		C2 := c2{}
+		spawn { C2.Listener() }
+		C2.E1.Signal()
+		C2.E2.Signal(C0)
+		C0.Done = 1
+
+
+# Test 3 — A repro using nested sync.
+c3 := class:
+	E0 : event() = event(){}
+	E1 : event() = event(){}
+	E2 : event(payload) = event(payload){}
+
+	Function()<suspends>:void =
+		sync:
+			E1.Await()
+			sync:
+				block:
+					E0.Await()
+					E1.Signal()
+				E2.Await().Do()
+
+verse_vm_only:
+	assert:
+		C0 := payload{}
+		C3 := c3{}
+		spawn { C3.Function() }
+		C3.E0.Signal()
+		C3.E2.Signal(C0)
+		C0.Done = 1
+
+
+# Test 4 — A repro that is close to the form of the live project where the crash was originally observed.
+c5 := class:
+	var Signal<public> : logic = true
+	F1(:int)<suspends>:void =
+		if (Signal?):
+			set Signal = false
+			Event.Signal()
+		else:
+			set Signal = true
+	Event : event() = event(){}
+
+c6 := class:
+	E0 : event() = event(){}
+	E1 : event() = event(){}
+	E2 : event() = event(){}
+	E3 : event() = event(){}
+	E4 : event(?int) = event(?int){}
+	E5 : event() = event(){}
+	E6 : event(payload) = event(payload){}
+	E7 : event() = event(){}
+	E8 : event() = event(){}
+
+c7 := class:
+	C6 : c6 = c6{}
+	C5 : c5 = c5{}
+
+	Run()<suspends>:void =
+		race:
+			C6.E0.Await()
+			loop:
+				C6.E2.Await()
+
+				race:
+					C6.E1.Await()
+					block:
+						V0 := C6.E4.Await()
+						if (V1 := V0?):
+							C6.E5.Await()
+
+				race:
+					C6.E0.Await()
+					C6.E3.Await()
+					C6.E7.Await()
+					C5.Event.Await()
+					loop:
+						C5.F1(0)
+						CoroUtils.WaitTicks(1)
+					loop:
+						C6.E6.Await().Do()
+
+				C6.E8.Signal()
+
+# Helper coroutine — fires `E6` repeatedly from a separate task to emulate
+# production's `game_manager.OnPlayerSpawned` dispatching player-added
+# signals while the listener is in race-2.
+F2(C : c6, V_payload : payload, V_n : int)<suspends>:void =
+	for (V_i := 0..V_n):
+		C.E6.Signal(V_payload)
+		CoroUtils.WaitTicks(1)
+
+verse_vm_only:
+	assert:
+		C6 := c6{}
+		C7 := c7{ C6 := C6 }
+		spawn { C7.Run() }
+
+		V_payload := payload{}
+
+		V_cycles := 8
+		for (V_cycle := 0..V_cycles - 1):
+			C6.E2.Signal()
+			CoroUtils.Tick(1)
+
+			if (Mod[V_cycle, 4] = 0):
+				C6.E4.Signal(option{0})
+				CoroUtils.Tick(1)
+				C6.E5.Signal()
+			else:
+				C6.E1.Signal()
+			CoroUtils.Tick(1)
+
+			spawn { F2(C6, V_payload, 3) }
+			for (V_j := 0..7):
+				CoroUtils.Tick(1)
+
+			C6.E3.Signal()
+			CoroUtils.Tick(1)
+
+		C6.E0.Signal()
+		CoroUtils.Tick(1)

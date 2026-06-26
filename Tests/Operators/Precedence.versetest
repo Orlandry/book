@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 <#> Verse operator precedence in descending order:
     a:b
     a..b

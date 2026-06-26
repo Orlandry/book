@@ -1,3 +1,4 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
 
 my_large_struct := struct:
     Value0  : int = 0

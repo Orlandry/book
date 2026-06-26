@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert{Floor(+0 / +1) = 0}
 assert{Floor(+0 / -1) = 0}
 

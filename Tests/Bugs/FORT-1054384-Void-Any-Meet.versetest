@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 F(G:type{_():r} where r:type):void=
     if(false?):
         G()

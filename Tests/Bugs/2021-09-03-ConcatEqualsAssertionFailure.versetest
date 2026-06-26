@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert:
     var A:[]int=array{}
     B:=if (true?):

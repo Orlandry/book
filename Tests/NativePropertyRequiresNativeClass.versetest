@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 using { /Verse.org/Tests/VerseTestScriptCmd }
 
 # Verifies that a <native>-tagged property cannot reference a non-<native> class.

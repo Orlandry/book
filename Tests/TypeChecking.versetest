@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Test return statement type checking
 assert_semantic_error(3510){               f(x:int  ):float = { return x } }
 assert_semantic_error(3510){               f(x:int  ):logic = { return x } }

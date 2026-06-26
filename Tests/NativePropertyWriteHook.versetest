@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 using { /Verse.org/Tests/VerseTestScriptCmd }
 
 # note: these tests need to assert that the hook is actually getting called. at the moment they

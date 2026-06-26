@@ -108,27 +108,27 @@ Option := module:
         X<public>:??int = option{option{2}}
 
 assert:
-    bp_vm_only{LogCheck(ToJson[Option.struct1], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct1\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct1:)X\":\{\"any_of\":[\{\"type\":\"BOOLEAN\"\},\{\"type\":\"OBJECT\",\"properties\":\{\"\":\{\"type\":\"INTEGER\",\"minimum\":-9223372036854775808,\"maximum\":9223372036854775807\}\}\}]\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct1:)X\"]\}")}
-    verse_vm_only{LogCheck(ToJson[Option.struct1], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct1\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct1:)X\":\{\"any_of\":[\{\"type\":\"BOOLEAN\"\},\{\"type\":\"OBJECT\",\"properties\":\{\"\":\{\"type\":\"INTEGER\"\}\}\}]\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct1:)X\"]\}")}
+    bp_vm_only{LogCheck(ToJson[Option.struct1], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct1\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct1:)X\":\{\"type\":\"INTEGER\",\"minimum\":-9223372036854775808,\"maximum\":9223372036854775807,\"nullable\":true\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct1:)X\"]\}")}
+    verse_vm_only{LogCheck(ToJson[Option.struct1], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct1\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct1:)X\":\{\"type\":\"INTEGER\",\"nullable\":true\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct1:)X\"]\}")}
 
 assert:
-    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct1:)X\":false\}", Option.struct1]
+    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct1:)X\":null\}", Option.struct1]
     not X.X?
 
 assert:
-    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct1:)X\":\{\"\":1\}\}", Option.struct1]
+    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct1:)X\":1\}", Option.struct1]
     X.X? = 1
 
 assert:
-    bp_vm_only{LogCheck(ToJson[Option.struct2], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct2\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct2:)X\":\{\"any_of\":[\{\"type\":\"BOOLEAN\"\},\{\"type\":\"OBJECT\",\"properties\":\{\"\":\{\"any_of\":[\{\"type\":\"BOOLEAN\"\},\{\"type\":\"OBJECT\",\"properties\":\{\"\":\{\"type\":\"INTEGER\",\"minimum\":-9223372036854775808,\"maximum\":9223372036854775807\}\}\}]\}\}\}]\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct2:)X\"]\}")}
-    verse_vm_only{LogCheck(ToJson[Option.struct2], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct2\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct2:)X\":\{\"any_of\":[\{\"type\":\"BOOLEAN\"\},\{\"type\":\"OBJECT\",\"properties\":\{\"\":\{\"any_of\":[\{\"type\":\"BOOLEAN\"\},\{\"type\":\"OBJECT\",\"properties\":\{\"\":\{\"type\":\"INTEGER\"\}\}\}]\}\}\}]\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct2:)X\"]\}")}
+    bp_vm_only{LogCheck(ToJson[Option.struct2], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct2\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct2:)X\":\{\"type\":\"INTEGER\",\"minimum\":-9223372036854775808,\"maximum\":9223372036854775807,\"nullable\":true\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct2:)X\"]\}")}
+    verse_vm_only{LogCheck(ToJson[Option.struct2], "\{\"type\":\"OBJECT\",\"description\":\"/Verse.org/VerseTests/Option/struct2\",\"properties\":\{\"(/Verse.org/VerseTests/Option/struct2:)X\":\{\"type\":\"INTEGER\",\"nullable\":true\}\},\"required\":[\"(/Verse.org/VerseTests/Option/struct2:)X\"]\}")}
 
 assert:
-    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct2:)X\":\{\"\":false\}\}", Option.struct2]
+    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct2:)X\":null\}", Option.struct2]
     not X.X??
 
 assert:
-    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct2:)X\":\{\"\":\{\"\":1\}\}\}", Option.struct2]
+    X := FromJson["\{\"(/Verse.org/VerseTests/Option/struct2:)X\":1\}", Option.struct2]
     X.X?? = 1
 
 assert:

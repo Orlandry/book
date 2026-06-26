@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Verify that native data members are only allowed on native classes.
 assert_valid:
     

@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 TestUsing<public> := module:
     WithASubmodule<public> := module:
         AndSomeClass<public> := class:

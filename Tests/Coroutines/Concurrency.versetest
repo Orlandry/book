@@ -1501,7 +1501,9 @@ TestSignalLoopRetry()<suspends>:void =
 
     # Roll back to NextTick and finish the race again.
     TestUtils.CauseAutoRTFMRetryTransaction[] or Err()
-    CoroUtils.GetEventLogString() = "A>BABA" or Err()
+    # When autortfm-retry is enabled, the intentionally non-transactional CoroUtils log changes.
+    if (not IsAutoRTFMRetryEnabled[]):
+        CoroUtils.GetEventLogString() = "A>BABA" or Err()
 
 assert:
     if (IsAutoRTFMEnabled[]):

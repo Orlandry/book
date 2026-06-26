@@ -13,6 +13,7 @@ assert_link_error(9200, 9200):
         Function():int = 42
         FUNCTION():int = 420
         fUNCTION():int = 4200
+} #bp_vm_only
 
 # SUCCESS - different arguments disambiguate the symbols
 assert_link_valid():
@@ -54,13 +55,14 @@ assert_link_valid():
     cc<public> := class:
         Function(Value:int):int = Value
         FUNCTION(Value:float):float = 42.0
-        
+
 # SUCCESS - suspends vs not can disambiguate too
 assert_link_valid():
     cc<public> := class:
         Function()<suspends>:int = 42
         FUNCTION():int = 420
 
+bp_vm_only{
 # FAILURE - suspends functions can collide on type and on code-gen
 assert_link_error(9002, 9200):
     cc<public> := class:
@@ -84,7 +86,7 @@ assert_link_error(9200):
     cc<public> := class:
         Function<public>():int = 42
         FUNCTION<private>():int = 420
-       
+
 #################
 # FAILURE - Everything that we just did for class member functions also holds for module functions
 assert_link_error(9200):
@@ -98,6 +100,7 @@ assert_link_error(9200, 9200):
         Function():int = 42
         FUNCTION():int = 420
         fUNCTION():int = 4200
+} #bp_vm_only
 
 # SUCCESS - different arguments disambiguate the symbols
 assert_link_valid():    # NO ERROR
@@ -146,6 +149,7 @@ assert_link_valid():
         Function()<suspends>:int = 42
         FUNCTION():int = 420
 
+bp_vm_only{
 # FAILURE - suspends functions can collide on type and on code-gen
 assert_link_error(9002, 9200):
     mm := module:
@@ -174,7 +178,7 @@ assert_link_error(9200):
 ###################
 # These next tests are strange cases. The errors are ultimately because of the same
 # FName aliasing, but they manifest as symbol-not-found errors. This happens because
-# the second function's binding data (ParamProperty) isn't initialized properly in 
+# the second function's binding data (ParamProperty) isn't initialized properly in
 # FindOrGenerateFunctionFromFunction(). This will eventually fail codegen, but it'll
 # also mask the aliasing error above. This will all have to be sorted out if we address
 # the larger issue.
@@ -256,7 +260,7 @@ assert_link_error(2306):
       cc<public> := class:
         Function<public>():int = 42
         FUNCTION<private>():int = 420
-       
+
 #################
 # FAILURE - Everything that we just did for class member functions also holds for module functions
 assert_link_error(2306):
@@ -348,6 +352,24 @@ assert_link_error(9200):
         foo(Value:int)<suspends>:void = {}
 #>
 } #bp_vm_only
+
+auto_qualify_todo{
+vpackage(P, /B, ?UploadedAtFNVersion:=3299):
+    vmodule(M):
+        snippet:
+            cc<public> := class:
+                Foo<public>():int = 42
+                FOO<public>():int = 420
+
+            assert:
+                Obj := cc{}
+                Obj.Foo() = 42
+
+            assert:
+                Obj := cc{}
+                # First-declared case collision wins; FOO() ends up calling Foo() instead.
+                Obj.FOO() = 42
+}
 
 # TODO(SOL-9082): Re-enable this test after making coercions consistent
 <#

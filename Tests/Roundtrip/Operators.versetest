@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert_roundtrip{a + b}
 assert_roundtrip{a - b}
 assert_roundtrip{a * b}

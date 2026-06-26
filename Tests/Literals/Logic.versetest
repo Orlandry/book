@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert{false = false}
 assert{false <> true}
 assert{true = true}

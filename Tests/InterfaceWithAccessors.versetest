@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 using { /Verse.org/Tests/VerseTestScriptCmd }
 
 # Accessors on field defined in interface

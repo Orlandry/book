@@ -3,3 +3,7 @@
 # Interface construction effects must constrain the construction effects of classes that inherit them.
 assert_valid               {vpackage(A,/A,?UploadedAtFNVersion:=3999){snippet{i := interface{}; c := class<computes>(i){}}}}
 assert_semantic_error(3512){vpackage(A,/A,?UploadedAtFNVersion:=4000){snippet{i := interface{}; c := class<computes>(i){}}}}
+
+# ... and of interfaces that inherit them. (Non-default interface effects couldn't be declared before 40.00,
+# so there is no <40.00 case to gate.)
+assert_semantic_error(3512){vpackage(A,/A,?UploadedAtFNVersion:=4000){snippet{i := interface{}; i2 := interface<computes>(i){}}}}

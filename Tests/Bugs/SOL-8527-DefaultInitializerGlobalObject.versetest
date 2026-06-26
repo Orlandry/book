@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 computes_class := class<computes>:
 
 GlobalObject:computes_class = computes_class{}

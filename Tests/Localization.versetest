@@ -211,3 +211,7 @@ assert_semantic_error<depends_on_library>(3509):
 
 assert_semantic_error<depends_on_library>(3540, 3540, 3540, 3506):
   ComplexMessage<localizes>(title, string, [agent]int : players, splitter: string, end: string):message =  ""
+
+assert_link_valid<depends_on_library>():
+  my_interface := interface:
+    MyMessage<localizes>:message = "Message in interface"

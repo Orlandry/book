@@ -1,0 +1,776 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+using { /Verse.org/Native }
+using {/Verse.org/Tests/VerseTestScriptCmd}
+using { /Verse.org/Concurrency }
+
+# Make sure union macro is not supported in the BPVM
+bp_vm_only
+{
+# Macro 'union' does not exist in BPVM
+assert_semantic_error(3506){U := union{}}
+}
+
+
+
+verse_vm_only
+{
+# Macro 'union' is epic_internal — gate at SemanticAnalyzer.cpp:13376 rejects non-Epic packages
+assert_semantic_error(3506) { vpackage(P,/NotVerse.org,?Scope:=PublicUser) { snippet { U := union{N:int} } } }
+
+assert_semantic_error(3619) { u:=union{}}
+assert_valid { u:=union{U:u}}
+assert_semantic_error(3547) { u:=union{V : void}; U:=u.V()} # Unions can't be implicitly defined
+assert_semantic_error(3547) { e:=enum{A}; E:=e.A} # Enums also can't implicitly be defined
+assert_valid { U:=union{V : void}}
+assert_valid { U:=union{T : tuple(int, int)}}
+assert_valid { U:=union{N0 : int, N1 : int}}
+assert_semantic_error(3596) { U:=union<open>{N0 : int, N1 : string, V : void}}
+assert_semantic_error(3596) { U:=union<closed>{N : int, S : string, V : void}}
+assert_valid { U:=union{N:int}; UM: [U]int = map{}}
+assert_semantic_error(3628, 3628) {u:=union{ A : void, A : int, A : string}}
+assert_semantic_error(3628, 3628) {u:=union{ V : void, V : void, V : void}}
+
+assert_valid{u := union{V:void}; MyArray:[]u = array{}}
+assert_valid{u := union{V:void}; MyArray:[]u = array{u.V()}}
+assert_semantic_error(3509){u0 := union{V:void}; u1 := union{V:void}; MyArray:[]u0 = array{u1.V()}}
+
+# Test that you can't define two union types with the same name.
+assert_semantic_error(3532){ u:=union{a:void}; u:=union{b:void} }
+
+# Test that you can't use the union macro except as the direct RHS of a definition.
+assert_semantic_error(3560){ union{Empty : void} }
+assert_semantic_error(3606){ C:=-union{Empty : void} }
+assert_semantic_error(3606,3547){ C:=union{Empty : void}+1 }
+assert_semantic_error(3502){ f():void= union{Empty : void} }
+assert_semantic_error(3502){ f():void={union{Empty : void}}}
+assert_semantic_error(3547){ u := union{Empty : void}; U := u.Empty() }
+
+# Test that you can't define a local union type.
+assert_semantic_error(3502){ f():void={ u:=union{V : void} } }
+
+# Malformed variant definition
+assert_semantic_error(3540){ u := union{ : int}}
+assert_semantic_error(3546){ u := union{ Empty }}
+assert_semantic_error(3546){ u := union{ Empty() : void }}
+assert_semantic_error(3547){ u := union{ Empty : void() }}
+
+assert_valid:
+    NoDupeUnionValues := union:
+        V : void
+        N : int
+
+    NoDupeUnionValues2 := union:
+        V : void
+        N : int
+
+assert_semantic_error(3628):
+    DuplicateVariants := union:
+        S : string
+        S : string
+
+assert_semantic_error(3532):
+    DuplicateVariantIdentifiers := union:
+        S : string
+
+    DuplicateVariantIdentifiers := union:
+        S : string
+
+assert_valid:
+    S:string=""
+    SomeUnion := union:
+        (SomeUnion:)S : string
+        V : void
+        N : int
+
+assert_valid:
+    u := union{V:void}
+    c := class:
+        U : u = u.V()
+        UO : ?u = false
+        UM : [u]int = map{ u.V() => 0}
+        UMV : [int]u = map{ 0 => u.V()}    
+        UA : []u = array{}
+
+# Cannot compare a comparable vs. noncomparable 
+assert_semantic_error(3509, 3512):
+    some_class := class{}
+    u := union {N : int, C : some_class }
+    l : logic = logic{u.C(some_class{}) = u.N(42)} 
+
+inttree := union:
+    Empty : void
+    Leaf : int
+    Node : node    
+
+node := struct<computes>:
+    Left : inttree
+    Value : int
+    Right : inttree
+
+Sum(T: inttree) : int = {
+  case (T) {
+    inttree.Node(N : node) =>
+        N.Value + Sum(N.Left) + Sum(N.Right)
+    inttree.Leaf(Number : int) =>
+        Number
+    inttree.Empty() => 0
+  }
+}
+
+IntTreeLeaf : inttree = inttree.Leaf(1)
+DeadEndNode : node = node{Left:=IntTreeLeaf, Value:=2, Right:=IntTreeLeaf}
+IntTreeDeadEnd : inttree = inttree.Node(DeadEndNode)
+IntTreeNode : node = node{Left:=IntTreeLeaf, Value:=2, Right:=IntTreeDeadEnd}
+IntTree : inttree = inttree.Node(IntTreeNode)
+
+assert:
+    Sum(IntTree) = 7
+
+# You can use a union as its own a payload type
+assert_valid:
+    u := union{ U : u, V : void}
+
+ru := union{ U : ru, V : void}
+
+assert_valid:
+    ru := union{ U : ru, V : void}
+    U : ru = ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.V()))))))))))))))))))))))))
+
+assert_semantic_error(3502):
+    ru := union{ U : ru, V : void}
+    U : ru = ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.V))))))))))))))))))))))))
+
+# Void variant payload case is resolved properly
+assert:
+    U : ru = ru.V()
+    Foo(_U:ru):int=
+        case(_U):
+            ru.U(LU : ru) => Foo(_U) + 1
+            ru.V() => 0
+    Foo(U) = 0
+
+# finite recursion
+assert:
+    U : ru = ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.U(ru.V()))))))))))))))))))))))))
+    Foo(_U:ru):int=
+        case(_U):
+            ru.U(LU : ru) => Foo(LU) + 1
+            ru.V() => 0
+    Foo(U) = 24
+   
+u := union {N0:int, N1:int, V:void}
+
+assert:
+    FlipFlop(U:u):u=
+        case(U):
+            u.N0(X:int)=> u.N1(X)
+            u.N1(X:int)=> u.N0(X)
+            _=> u.V()
+
+    FlipFlop(u.N0(6)) = u.N1(6)
+
+# Wildcard with max payload causes error
+assert_semantic_error(2302):
+    u := union {A:int, B:int, C:void}
+
+    FlipFlop(U:u):u=
+        case(U):
+            u.A(X:int)=> u.B(X)
+            u.B(X:int)=> u.A(X)
+            u.C() => u.C()
+            _=> u.C() #Invalid wildcard - we hit max already
+
+# Not handling all values
+assert_semantic_error(3512):
+    u := union {N0:int, N1:int, V:void}
+    FlipFlop(U:u):u=
+        case(U):
+            u.N0(X:int)=> u.N1(X)
+            u.N1(X:int)=> u.N0(X)
+
+# Can't case over a union that is not owned by the LHS
+assert_semantic_error(3618):
+    u1 := union {AN:int}
+    u2 := union {BN:int}
+    Foo(U:u1):void=
+        case(U):
+            u2.BN(X:int)=>
+
+# You can't have a function as a union in a case
+assert_semantic_error(3617, 3618):
+    u1 := union {N:int}
+    f0():void={}
+    U1 : u1 = u1.N(1)
+    f1():void=
+        case(U1):
+            f0() =>
+            _=>    
+
+u1 := union:
+    N:int
+    S : string
+    V : void
+    
+u2 := union:
+    N:int
+    S : string
+    V : void
+
+assert{u1.N(1) = u1.N(1)}
+assert{u1.N(1) <> u1.N(2)}
+
+# Maps
+U1Map : [u1]int = map {u1.N(67) => 0, u1.V() => 1}
+
+assert:
+    U1Int := U1Map[u1.N(67)] or Err()
+    U1Int = 0
+
+assert:
+    U1Int := U1Map[u1.V()] or Err()
+    U1Int = 1
+
+assert:
+    var SomeUnionMap : [u1]int = map{}
+    set SomeUnionMap[u1.S("Fizz")] = 6
+    SomeUnionMap[u1.S("Fizz")] = 6
+    logic{SomeUnionMap[u1.S("Buzz")]} = false
+
+assert:
+    var SomeUnionMap : [int]u1 = map{}
+    set SomeUnionMap[0] = u1.N(6)
+    SomeUnionMap[0] = u1.N(6)
+    SomeUnionMap[0] <> u1.N(7)
+
+assert_semantic_error(3547, 3502):
+    u1 := union:
+        N:int
+        S : string
+        V : void
+    SomeUnion := u1.S
+    
+assert:
+    logic{U1Map[u1.S("Buzz")]} = false
+
+assert:
+    U1 : u1 = u1.N(1)
+    U2 : u2 = u2.N(1)
+    U1 <> U2
+
+assert:
+    U1 : u1 = u1.N(1)
+    U2 : u2 = u2.N(1)
+    not U1 = U2
+    
+
+assert:
+    V1 : u1 = u1.N(1)
+    V2 : u1 = u1.N(1)
+    V1 = V2
+
+GU1() : u1 = u1.V()
+IsV(PU1 : u1) : logic =
+    case(PU1):
+        u1.V() => true
+        u1.S(S : string) => false
+        _=> false
+
+assert:
+    IsV(GU1()) = true
+
+assert:
+    IsV(u1.S("Fizz")) = false
+
+assert:
+    GU1() = u1.V()
+
+assert:
+    var U1 : u1 = u1.S("Fizz")
+    U1 = u1.S("Fizz")
+
+assert:
+    var U1 : u1 = u1.V()
+    U1 = u1.V()
+    set U1 = u1.S("Fizz")
+    U1 = u1.S("Fizz")
+
+GU1_ : u1 = u1.V()
+
+assert{GU1_ = u1.V()}
+
+# Join
+assert_valid:
+    u := union{N:int}
+    U1 : u = u.N(0)
+    U2 : u = u.N(1)
+    UA : []u = array{U1, U2}
+
+# Invalid join
+assert_semantic_error(3509):
+    u1 := union{N:int}
+    u2 := union{N:int}
+
+    U1 : u1 = u1.N(0)
+    U2 : u2 = u2.N(1)
+    UA : []u1 = array{U1, U2}
+
+# Unified variant payloads in case not yet supported
+assert_semantic_error(3620, 3620, 3616):
+    u := union{N:int, V:void, C:void}
+    U : u = u.N(5)
+    Foo():void=
+        case(U):
+            u.N(1) => 0
+            u.N(2) => 1
+            _=> 3
+
+# Cannot mix unified payloads with definition payloads 
+assert_semantic_error(3620):
+    u := union{ N : int, V : void, S : string }
+
+    Fun(U:u):void=
+        case(U):
+            u.N(2)=>
+            u.S(String : string)=>
+            _=>
+assert_semantic_error(3620):
+    u := union{ N : int, V : void, S : string }
+
+    Fun(U:u):void=
+        case(U):
+            u.S(String : string)=>
+            u.N(2)=>
+            _=>
+assert_semantic_error(3620):
+    u := union{ N : int, V : void, S : string }
+    Num : int = 4
+    Fun(U:u):void=
+        case(U):
+            u.N(Num)=>
+            u.S(String : string)=>
+            _=>
+
+# Expect union variant as initializer 
+assert_semantic_error(3509):
+    u0:=union{V : void}
+    c0 := class:
+        var M0:u0=u0 # invalid
+
+assert_semantic_error(3509):
+    u0:=union{V : void}
+    c0 := class:
+        var M0:u0=u0.V() # valid 
+    f0():void=
+        C0:= c0{}
+        set C0.M0=u0 # invalid
+
+# Non-invocation variant in case is not supported
+assert_semantic_error(3620):
+    u := union{ P : void }
+    U : u = u.P()
+
+    Fun():void=
+        case(U):
+            u.P => # Invalid, expected P()
+
+# Wildcard must be at the end (also covers no duplicate wildcard)
+assert_semantic_error(3616):
+    u := union{ P : void }
+    U : u = u.P()
+
+    Fun():void=
+        case(U):
+            u.P() =>
+            _=>
+            _=> 
+
+# Missing arm
+assert_semantic_error(3620):
+    u := union{ P : void }
+    U : u = u.P()
+
+    Fun():void=
+        case(U):
+            u.P() 
+            _=>
+
+# Misplaced literal
+assert_semantic_error(3620):
+    u := union{ P : void }
+    U : u = u.P()
+
+    Fun():void=
+        case(U):
+            67
+            u.P() => 
+            _=>
+    
+# We don't support parametric unions yet
+assert_semantic_error(3502){node(t:type) := class{}; PU(t: type) := union{ P : node(t) }}
+
+assert_semantic_error(3662, 3596, 3596):
+    u:=union<persistable><final>{V:void}
+    persist_class := class<persistable><final>:
+        InvalidUnion : u = u.V()
+
+# You can't use an enum in a union case
+assert_semantic_error(3620, 3618):
+    e:=enum{A,B,C}
+    u:=union{V : void}
+    Fun(U:u):void=
+        case(U):
+            e.A =>
+            _=>
+
+assert_semantic_error(3509):
+    u:=union{P:void}
+    c0 := class:
+        var M0:u=u.P()
+    f0():void=
+        C0:= c0{}
+        set C0.M0=u
+
+assert_valid:
+    u := union { P : int, V : void}
+    U1 : u = u.P(1)
+    U2 : u = u.V()
+    A :[]any = array{U1, U2}
+    
+assert_valid:
+    u := union { P : int}
+    A : any = u.P(1)
+    F0(:u):int=0
+    F1(:u):int=1
+    Fs : [](u->int) = array{F0, F1}
+
+assert_valid:
+    u := union { P : int}
+    F0(:u):int = 0
+    F1(:u):int = 1
+    Fs : [](false->int) = array{F0, F1}
+    
+F0(X:any):any=X
+UF:=union{N:int}
+assert{F0(UF)}
+assert{F0(UF.N(6))}
+
+assert{option{UF.N(0)}?}
+UF2: UF =UF.N(0)
+assert{option{UF.N(0)}? = UF2}
+
+assert_valid:
+    u := union {P : int}
+    U : comparable = u.P(6)
+
+Equal(X:t, Y:comparable where t:subtype(comparable))<computes><decides>:t =
+    X = Y
+
+assert:
+    logic{Equal[UF.N(1), UF.N(1)]} = true
+
+assert:
+    logic{Equal[UF.N(0), UF.N(1)]} = false
+
+variant_types := union:
+    String : string
+    Int : int
+    Logic : logic
+    Other : void
+
+VariantTypesAsString(VariantTypes : variant_types):string=
+    case(VariantTypes):
+        variant_types.String(String : string) => String
+        variant_types.Int(Number : int) => DebugToString(Number)
+        variant_types.Logic(Logic : logic) => if(Logic?){"true"}else{"false"}
+        _=> "Nothing"
+
+# Test for duplicate variants causing a compiler error
+assert_semantic_error(3616):
+    variant_types := union:
+        String : string
+        Int : int
+        Logic : logic
+        Other : void
+
+    VariantTypesAsStringCompileError(VariantTypes : variant_types):string=
+        case(VariantTypes):
+            variant_types.String(String : string) => String
+            variant_types.Int(Int : int) => "Number"
+            variant_types.Int(Number : int) => "NUMBER"
+            variant_types.Logic(Logic : logic) => if(Logic?){"true"}else{"false"}
+            _=> "Nothing"
+assert:
+    VariantTypesAsString(variant_types.String("TripleT")) = "TripleT"
+    VariantTypesAsString(variant_types.Logic(true)) = "true"
+    VariantTypesAsString(variant_types.Int(67)) = "67"
+    VariantTypesAsString(variant_types.Other()) = "Nothing"
+    
+assert_semantic_error(3509):
+    c(t:type) := class{X : int = 1}
+    U0 := union{Event : c(int)}
+    ExpressionCheck(X : U0):void=
+        case(U0.Event(c(int))):
+            U0.Event(_ : c(int)) => 
+
+u1_ := union{U2:u2_, V:void}
+u2_ := union{U3:u3_}
+u3_ := union{V:void}
+
+UF0(U:u1_):logic=
+    case(U):
+        u1_.U2(U2 : u2_) => true
+        _=> false
+
+assert:
+    UF0(u1_.U2(u2_.U3(u3_.V()))) = true
+
+assert:
+    UF0(u1_.V()) <> true
+
+assert:
+    MU := u1_.U2(u2_.U3(u3_.V()))
+    logic{Equal[u1_.U2(u2_.U3(u3_.V())), MU]} = true
+
+assert:
+    MU := u1.N(1)
+    logic{Equal[MU, 1]} = false
+   
+s := struct<computes>{ N : int }
+assert:
+    MU := u1.N(1)
+    logic{Equal[MU, s{N:=1}]} = false
+
+assert:
+    MU := u1_.U2(u2_.U3(u3_.V()))
+    logic{Equal[MU, s{N:=1}]} = false
+
+us := union{ S0 : string, S1 : string}
+assert:
+    MU : us = us.S0("buzz")
+    not Equal[MU, "buzz"]
+    logic{Equal[MU, us.S1("buzz")]} = false
+
+e := enum{A, B}
+ue := union{A : void, B : void}
+assert:
+    UE : ue = ue.A()
+    logic{Equal[UE, e.A]} = false
+
+assert:
+    MU := u1_.U2(u2_.U3(u3_.V()))
+    logic{Equal[MU, e.B]} = false
+
+assert_valid:
+    u := union{V : void, S : string} 
+    Foo(U:u)<decides>:void=
+        case(U):
+            u.V() =>
+
+# This is legal just like the next test that has an enum
+assert_valid:
+    u := union{V : void, S : string} 
+    Foo(U:u)<decides>:void=
+        case(U):
+            u.V() =>
+            u.S(S : string) =>
+
+assert_valid:
+    u := union{V : void, S : string}
+    Foo(U:u):void=
+        logic{
+        case(U):
+            u.V() =>
+        }
+
+# Fully exhausted variant case is not decides, since case guarantees each variant 
+assert_semantic_error(3620, 3513):
+    u := union{V : void, S : string}
+    Foo(U:u):void=
+        logic{
+        case(U):
+            u.V() =>
+            u.S("String") =>    
+        }
+
+# Not fully exhausted case is decides
+assert_valid:
+    e := enum{A}
+    Foo(E:e)<decides>:void=
+        case(E):
+            e.A =>
+    
+assert_valid:
+    u := union {N : int, S : string }
+    l : logic = logic{u.S("STRING") = u.N(42)}
+
+assert_semantic_error(3546):
+    a := module:
+        c<public> := class{}
+    using { a }
+    u := union{B(:a) : int, C : a.c}
+
+union1 := union:
+    N:int
+enum1 := enum:
+    N
+
+# Enums should not be comparable to variants
+assert_semantic_error(3502):
+    union1 := union:
+        N:int
+    enum1 := enum:
+        N
+    Main()<decides>:void=
+        enum1.N = union1.N
+
+#  First class variants are not yet supported
+assert_semantic_error(3509, 3502):
+    union1 := union:
+        N:int
+    Main():void =
+        F := union1.N
+        F(1)
+
+# Can't case over a first class variant that doesn't have a payload
+assert_semantic_error(3502):
+    union1 := union:
+        N:int
+
+    Main():int=
+        F := union1.N
+        case(F):
+            union1.N(N : int) => N
+   
+# Can't compare a variant to a function
+assert_semantic_error(3502, 3502):
+    Equal(X:t, Y:comparable where t:subtype(comparable))<computes><decides>:t =
+        X = Y
+    union1 := union:
+        N:int
+    Main()<decides>:void=
+        F := union1.N
+        Equal[union1.N, union1.N(5)]
+
+# Nested case with union variants
+assert_valid:
+    u := union{ U : u, S : string, V : void}
+
+    F(LU:u):void=
+        case(LU):
+            u.U(_U : u)=>
+                case(_U):
+                    u.U(__U:u)=>
+                    _=>
+            _=>
+
+nu0 := union{ NU : nu1, S : string, V : void}
+nu1 := union{ NU : nu0, N : int, F : float}
+
+assert:
+    F(NU:nu0):int=
+        case(NU):
+            nu0.NU(NU1 : nu1)=>
+                case(NU1):
+                    nu1.NU(NU0 : nu0)=>
+                        case(NU0):
+                            nu0.V()=> 42
+                            _=> 0
+                    nu1.N(N : int)=> N
+                    _=> 0
+            _=> 0
+
+    F(nu0.NU(nu1.NU(nu0.V()))) = 42
+
+# Future nesting support which doesn't require nesting case statements
+assert_semantic_error(3620, 3620, 3616):
+    u := union{ N : int, S : string}
+    u1 := union{ U : u, V : void}
+
+    SomeUnion1 : u1 = u1.U(u.N(6))
+    F():void=
+        case(SomeUnion1):
+            u1.U(u.N(Number : int))    => # 3620
+            u1.U(u.S(String : string)) => # 3620 & 3616
+            u1.V() =>
+    
+# Can't use union variant variables for RHS of case
+assert_semantic_error(3506, 3617):
+    u := union{ U : u, S : string, V : void}
+    F(LU:u):void=
+        case(LU):
+            LU.U(_U : u)=>
+            _=>
+
+
+# Can't compare a variant that's in a union that contains non-comparable variant payloads
+assert_semantic_error(3509):
+    struct_ := struct{S : string}
+    class_ := class{_Struct : struct_}
+    union_ := union:
+        S : string
+        N : int
+        F : float
+        L : logic
+        Stru : struct_
+        C : class_
+    # Array to map
+    UArray_ : []union_ = array{union_.S("Fizz"), union_.N(6), union_.F(6.6), union_.L(true)}
+    UMap : [union_]int = map{}
+
+union_ := union:
+    S : string
+    N : int
+    F : float
+    L : logic
+
+# You can compare and hash comparable/hashable 
+assert:
+    # Array to map
+    UArray_ : []union_ = array{union_.S("Fizz"), union_.N(6), union_.F(6.6), union_.L(true)}
+    var UMap : [union_]int = map{}
+    var Index : int = 0
+
+    for(U : UArray_):
+        set UMap[U] = Index
+        set Index += 1
+
+    var NewUArray_ : []union_ = array{}
+    for(U -> V : UMap):
+        set NewUArray_ += array{U}
+
+    for(U : NewUArray_):
+        logic{UMap[U]} = true
+
+# Specifiers
+assert_valid:
+    u<public> := union{N : int}
+
+assert_valid:
+    u := union<converges>{N : int}
+
+assert_valid:
+    u := union<computes>{N : int}
+
+assert_semantic_error(3596):
+    u := union<decides>{N : int}
+    
+assert_semantic_error(3604):
+    u := union{N<public> : int}
+    
+assert_semantic_error(3604):
+    u := union{N : int<decides>}
+
+    U : u = u.N(6)
+assert_semantic_error(3604):
+    u := union{N<decides> : int}
+
+    U : u = u.N(6)
+
+# Reserved keywords
+assert_semantic_error(3514):
+    Self := union{N : int}
+    
+assert_semantic_error(3514):
+    u := union{union : int}
+
+}

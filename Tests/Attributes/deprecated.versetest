@@ -1,5 +1,11 @@
 # Copyright Epic Games, Inc. All Rights Reserved.
 
+# -----------------------------------------------------------------------
+# Valid declarations: @deprecated and @deprecated{Message := "..."} on each supported scope
+# -----------------------------------------------------------------------
+
+# Bare @deprecated (no message)
+
 assert_valid:
     @deprecated
     X:int = 1
@@ -30,16 +36,230 @@ assert_valid:
     @deprecated
     interface1 := interface{}
 
+assert_valid:
+    @deprecated
+    TestModule := module{}
+
+# @deprecated{Message := "..."} (with message)
+
+assert_valid:
+    @deprecated{Message := "Use NewX instead."}
+    X:int = 1
+
+assert_valid:
+    @deprecated{Message := "Use class2 instead."}
+    class1 := class{}
+
+assert_valid:
+    @deprecated{Message := "Use struct2 instead."}
+    struct1 := struct{}
+
+assert_valid:
+    @deprecated{Message := "Use G instead."}
+    F():void = {}
+
+assert_valid:
+    @deprecated{Message := "Use enum2 instead."}
+    enum1 := enum:
+        A
+
+assert_valid:
+    enum1 := enum:
+        @deprecated{Message := "Use B instead."}
+        A
+
+assert_valid:
+    @deprecated{Message := "Use interface2 instead."}
+    interface1 := interface{}
+
+assert_valid:
+    @deprecated{Message := "Use NewTestModule instead."}
+    TestModule := module{}
+
+# -----------------------------------------------------------------------
+# Invalid attribute locations (same rules apply for both forms)
+# -----------------------------------------------------------------------
+
 assert_semantic_error(3604):
     F(X:int):void =
-        @deprecated
+        @deprecated{Message := "Use NewX instead."}
         X
+
+assert_semantic_error(3596):
+    F(@deprecated{Message := "Use NewX instead."} X:int):void = {}
 
 assert_semantic_error(3596):
     F(@deprecated X:int):void = {}
 
-assert_semantic_error(3596):
-    X<deprecated>:int = 0
+# -----------------------------------------------------------------------
+# Invalid archetype usages
+# -----------------------------------------------------------------------
+
+# Empty archetype is valid (Message has a default initializer)
+assert_valid:
+    @deprecated{}
+    X:int = 1
+
+# Wrong field type (int instead of string)
+assert_semantic_error(3509):
+    @deprecated{Message := 0}
+    X:int = 1
+
+# Wrong field type (logic instead of string)
+assert_semantic_error(3509):
+    @deprecated{Message := false}
+    X:int = 1
+
+# Unknown field name
+assert_semantic_error(3506):
+    @deprecated{NotMessage := "Use NewX instead."}
+    X:int = 1
+
+# Mixing the unknown field with a valid one still errors on the unknown one
+assert_semantic_error(3506):
+    @deprecated{Message := "Use NewX instead.", NotMessage := "blah"}
+    X:int = 1
+
+# Defining Message twice is an ambiguous definition
+assert_semantic_error(3532):
+    @deprecated{Message := "a", Message := "b"}
+    X:int = 1
+
+# Call-syntax `@deprecated("...")` is treated as a type cast and rejected
+assert_semantic_error(3509, 3547):
+    @deprecated("Use NewX instead.")
+    X:int = 1
+
+# Call-syntax with no args fails the same way
+assert_semantic_error(3509, 3547):
+    @deprecated()
+    X:int = 1
+
+# -----------------------------------------------------------------------
+# DiscontinuedAtFNVersion field
+# -----------------------------------------------------------------------
+
+# Valid usage: Message + DiscontinuedAtFNVersion together
+assert_valid:
+    @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 9999}
+    X:int = 1
+
+assert_valid:
+    @deprecated{Message := "Use class2 instead.", DiscontinuedAtFNVersion := 9999}
+    class1 := class{}
+
+assert_valid:
+    @deprecated{Message := "Use G instead.", DiscontinuedAtFNVersion := 9999}
+    F():void = {}
+
+# Order of fields doesn't matter
+assert_valid:
+    @deprecated{DiscontinuedAtFNVersion := 9999, Message := "Use NewX instead."}
+    X:int = 1
+
+# Setting DiscontinuedAtFNVersion without Message is an error (3696)
+assert_semantic_error(3696):
+    @deprecated{DiscontinuedAtFNVersion := 9999}
+    X:int = 1
+
+# Setting DiscontinuedAtFNVersion with empty Message also errors (3696) - empty messages
+# are treated as "no message" by the use-site formatter, so they don't satisfy the requirement.
+assert_semantic_error(3696):
+    @deprecated{Message := "", DiscontinuedAtFNVersion := 9999}
+    X:int = 1
+
+# Wrong field type for DiscontinuedAtFNVersion
+assert_semantic_error(3509):
+    @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := "not an int"}
+    X:int = 1
+
+assert_semantic_error(3509):
+    @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := false}
+    X:int = 1
+
+# Duplicate field
+assert_semantic_error(3532):
+    @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 1, DiscontinuedAtFNVersion := 2}
+    X:int = 1
+
+# -----------------------------------------------------------------------
+# DiscontinuedAtFNVersion use-site behavior:
+#   project pinned below the cutoff -> regular deprecation warning (2009)
+#   project pinned at or above the cutoff -> hard compile error (3695)
+# -----------------------------------------------------------------------
+
+# Below cutoff -> warning
+assert_semantic_error(2009):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=1000):
+        snippet:
+            @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 2000}
+            X:int = 1
+            F():int = X
+
+# At cutoff -> error
+assert_semantic_error(3695):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2000):
+        snippet:
+            @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 2000}
+            X:int = 1
+            F():int = X
+
+# Above cutoff -> error
+assert_semantic_error(3695):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2500):
+        snippet:
+            @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 2000}
+            X:int = 1
+            F():int = X
+
+# Above cutoff on a class type -> error
+assert_semantic_error(3695):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2500):
+        snippet:
+            @deprecated{Message := "Use class2 instead.", DiscontinuedAtFNVersion := 2000}
+            class1 := class{}
+            F():void = class1{}
+
+# A deprecated-without-DiscontinuedAtFNVersion definition only ever warns, never errors
+assert_semantic_error(2009):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=999999):
+        snippet:
+            @deprecated{Message := "Use NewX instead."}
+            X:int = 1
+            F():int = X
+
+# Suppression: a deprecated caller still suppresses the warning below the cutoff
+assert_valid:
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=1000):
+        snippet:
+            @deprecated{Message := "Use d instead.", DiscontinuedAtFNVersion := 2000}
+            c := class<computes>{}
+            @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 2000}
+            X:?c=false
+
+# Suppression also covers the error case (above cutoff) when the caller is itself deprecated
+assert_valid:
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2500):
+        snippet:
+            @deprecated{Message := "Use d instead.", DiscontinuedAtFNVersion := 2000}
+            c := class<computes>{}
+            @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 2000}
+            X:?c=false
+
+# Override suppression carries over
+assert_valid:
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2500):
+        snippet:
+            base_class := class:
+                @deprecated{Message := "Use G instead.", DiscontinuedAtFNVersion := 2000}
+                F<public>():void = {}
+            child_class := class(base_class):
+                @deprecated{Message := "Use H instead.", DiscontinuedAtFNVersion := 2000}
+                F<override>():void = {}
+
+# -----------------------------------------------------------------------
+# Using a deprecated definition produces warning 2009
+# -----------------------------------------------------------------------
 
 assert_semantic_error(2009):
     @deprecated
@@ -47,24 +267,29 @@ assert_semantic_error(2009):
     F():int = X
 
 assert_semantic_error(2009):
-    @deprecated
+    @deprecated{Message := "Use NewX instead."}
+    X:int = 1
+    F():int = X
+
+assert_semantic_error(2009):
+    @deprecated{Message := "Use class2 instead."}
     class1 := class{}
     F():void =
         class1{}
 
 assert_semantic_error(2009):
-    @deprecated
+    @deprecated{Message := "Use struct2 instead."}
     struct1 := struct{}
     F():void =
         struct1{}
 
 assert_semantic_error(2009):
-    @deprecated
+    @deprecated{Message := "Use G instead."}
     F():void = {}
     G():void = F()
 
-assert_semantic_error(2009):
-    @deprecated
+assert_semantic_error(2009, 2009):
+    @deprecated{Message := "Use enum2 instead."}
     enum1 := enum:
         A
     F():void =
@@ -72,43 +297,43 @@ assert_semantic_error(2009):
 
 assert_semantic_error(2009):
     enum1 := enum:
-        @deprecated
+        @deprecated{Message := "Use B instead."}
         A
     F():void =
         enum1.A
 
 assert_valid:
     enum1 := enum:
-        @deprecated
+        @deprecated{Message := "Use B instead."}
         A
         B
     F():void =
         enum1.B
 
 assert_semantic_error(2009):
-    @deprecated
+    @deprecated{Message := "Use interface2 instead."}
     interface1 := interface{}
     F(:interface1):void = {}
 
 assert_semantic_error(2009):
-    @deprecated
+    @deprecated{Message := "Use interface2 instead."}
     interface1 := interface{}
     class1 := class(interface1) {}
 
 assert_semantic_error(2009):
-    @deprecated
+    @deprecated{Message := "Use class2 instead."}
     class1(t:type) := class{}
     F():void =
         class1(int){}
 
 assert_semantic_error(2009):
-    @deprecated
+    @deprecated{Message := "Use G instead."}
     F(:int):void = {}
     F(:float):void = {}
     G():void = F(0)
 
 assert_valid:
-    @deprecated
+    @deprecated{Message := "Use G instead."}
     F(:int):void = {}
     F(:float):void = {}
     G():void = F(0.0)
@@ -117,32 +342,372 @@ assert_semantic_error<depends_on_library>(2009):
     using { /Verse.org/Tests/VerseTestScriptCmd }
     F():void = TestDeprecated()
 
-# Test that deprecated definitions can use another deprecated definition.
-assert_semantic_error(2009){@deprecated c := class<computes>{};             X:?c=false}
-assert_valid               {@deprecated c := class<computes>{}; @deprecated X:?c=false}
+# -----------------------------------------------------------------------
+# Deprecated definitions can use other deprecated definitions
+# -----------------------------------------------------------------------
 
-assert_semantic_error(2009){@deprecated c := class<computes>{};             F(X:c):void={}}
-assert_valid               {@deprecated c := class<computes>{}; @deprecated F(X:c):void={}}
-
-assert_semantic_error(2009){@deprecated c := class<computes>{};             F():?c=false}
-assert_valid               {@deprecated c := class<computes>{}; @deprecated F():?c=false}
-
-assert_semantic_error(2009){@deprecated c := class<computes>{};             F():void=c{}}
-assert_valid               {@deprecated c := class<computes>{}; @deprecated F():void=c{}}
-
-assert_semantic_error(2009){@deprecated c := class<computes>{};             d := class(c){}}
-assert_valid               {@deprecated c := class<computes>{}; @deprecated d := class(c){}}
-
-assert_semantic_error(2009){@deprecated c := class<computes>{};             t := type{_(:c):void}}
-assert_valid               {@deprecated c := class<computes>{}; @deprecated t := type{_(:c):void}}
+assert_semantic_error(2009):
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    X:?c=false
 
 assert_valid:
-    @deprecated TestModule := module{}
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    @deprecated{Message := "Use NewX instead."}
+    X:?c=false
 
 assert_semantic_error(2009):
-    @deprecated TestModule := module{}
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    F(X:c):void={}
+
+assert_valid:
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    @deprecated{Message := "Use G instead."}
+    F(X:c):void={}
+
+assert_semantic_error(2009):
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    F():?c=false
+
+assert_valid:
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    @deprecated{Message := "Use G instead."}
+    F():?c=false
+
+assert_semantic_error(2009):
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    F():void=c{}
+
+assert_valid:
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    @deprecated{Message := "Use G instead."}
+    F():void=c{}
+
+assert_semantic_error(2009):
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    d := class(c){}
+
+assert_valid:
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    @deprecated{Message := "Use e instead."}
+    d := class(c){}
+
+assert_semantic_error(2009):
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    t := type{_(:c):void}
+
+assert_valid:
+    @deprecated{Message := "Use d instead."}
+    c := class<computes>{}
+    @deprecated{Message := "Use u instead."}
+    t := type{_(:c):void}
+
+# Bare @deprecated also suppresses the warning when both are deprecated
+assert_valid:
+    @deprecated
+    c := class<computes>{}
+    @deprecated
+    X:?c=false
+
+# -----------------------------------------------------------------------
+# Deprecated modules
+# -----------------------------------------------------------------------
+
+assert_semantic_error(2009):
+    @deprecated{Message := "Use NewTestModule instead."}
+    TestModule := module{}
     using{/Verse.org/VerseTests/TestModule}
 
-assert_semantic_error(2009):
-    @deprecated TestModule := module{TestFunc<public>():void = {}}
+# @deprecated on a module propagates to its members: `TestModule.TestFunc()` warns once for the
+# reference to the deprecated module `TestModule` and once for `TestFunc`, which is deprecated by
+# virtue of living inside a deprecated module even though it carries no @deprecated of its own.
+assert_semantic_error(2009, 2009):
+    @deprecated{Message := "Use NewTestModule instead."}
+    TestModule := module{TestFunc<public>():void = {}}
     F():void = TestModule.TestFunc()
+
+# `import` of a deprecated module is a use of a deprecated definition.
+assert_semantic_error(2009):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use NewModule instead."}
+            DeprecatedModule<public> := module{}
+            Alias := import(/Verse.org/A/DeprecatedModule)
+
+# A nested child module inherits @deprecated from the outer module. The path-literal `using`
+# resolves only the leaf module, so exactly one warning is produced (for `inner`, deprecated by
+# virtue of `outer`).
+assert_semantic_error(2009):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use NewOuter instead."}
+            outer<public> := module:
+                inner<public> := module{}
+            using{/Verse.org/A/outer/inner}
+
+# The enclosing module is NOT made deprecated by marking an inner module: a sibling defined in the
+# outer module is not deprecated.
+assert_valid:
+    outer := module:
+        @deprecated{Message := "Use NewInner instead."}
+        inner<public> := module{}
+        NotDeprecated<public>():void = {}
+    F():void = outer.NotDeprecated()
+
+# Use of a deprecated module's member from within that same deprecated module is allowed -
+# deprecated code may freely use its own deprecated siblings.
+assert_valid:
+    @deprecated{Message := "Use NewModule instead."}
+    DeprecatedModule := module:
+        Helper<public>():void = {}
+        Caller<public>():void = Helper()
+
+# -----------------------------------------------------------------------
+# Overriding deprecated functions/members: warn only when override is not deprecated
+# -----------------------------------------------------------------------
+
+assert_semantic_error(2009):
+    base_class := class:
+        @deprecated{Message := "Use G instead."}
+        F<public>():void = {}
+    child_class := class(base_class):
+        F<override>():void = {}
+
+assert_valid:
+    base_class := class:
+        @deprecated{Message := "Use G instead."}
+        F<public>():void = {}
+    child_class := class(base_class):
+        @deprecated{Message := "Use H instead."}
+        F<override>():void = {}
+
+# Bare @deprecated on the override also suppresses the warning
+assert_valid:
+    base_class := class:
+        @deprecated{Message := "Use G instead."}
+        F<public>():void = {}
+    child_class := class(base_class):
+        @deprecated
+        F<override>():void = {}
+
+assert_semantic_error(2009):
+    base_class := class:
+        @deprecated{Message := "Use Y instead."}
+        X<public>:int = 0
+    child_class := class(base_class):
+        X<override>:int = 1
+
+assert_valid:
+    base_class := class:
+        @deprecated{Message := "Use Y instead."}
+        X<public>:int = 0
+    child_class := class(base_class):
+        @deprecated{Message := "Use Z instead."}
+        X<override>:int = 1
+
+# -----------------------------------------------------------------------
+# use-of-deprecated-definitions and use-of-discontinued-definitions metadata.
+# Mirrors the use-of-experimental-definitions checks in experimental.versetest.
+# The telemetry walk records every reference to a @deprecated definition in a
+# user-scope package; warning/error suppression is irrelevant to the tracker.
+# -----------------------------------------------------------------------
+
+# No @deprecated references -> no metadata
+assert_valid(?ExpectUseOfDeprecatedDefinition:=false, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            X:int = 1
+            F():int = X
+
+# A @deprecated definition with no references -> still no metadata
+assert_valid(?ExpectUseOfDeprecatedDefinition:=false, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use NewX instead."}
+            X:int = 1
+
+# Reference from a deprecated caller suppresses the warning but is still tracked
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use NewX instead."}
+            X:int = 1
+            @deprecated{Message := "Use G instead."}
+            F():int = X
+
+# Cross-package reference from a deprecated caller
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P0, /Verse.org/A, ?Scope:=PublicAPI):
+        snippet:
+            @deprecated{Message := "Use class2 instead."}
+            class1<public> := class{}
+    vpackage(P1, /Verse.org/B, ?Scope:=InternalUser, ?Dependencies:=(P0)):
+        snippet:
+            @deprecated{Message := "Use G instead."}
+            F(:A.class1):void = {}
+
+# At/above DiscontinuedAtFNVersion routes through the discontinued bucket
+assert_valid(?ExpectUseOfDeprecatedDefinition:=false, ?ExpectUseOfDiscontinuedDefinition:=true):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2500):
+        snippet:
+            @deprecated{Message := "Use d instead.", DiscontinuedAtFNVersion := 2000}
+            c := class<computes>{}
+            @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 2000}
+            X:?c=false
+
+# Below the cutoff the same definition is just deprecated
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser, ?UploadedAtFNVersion:=1000):
+        snippet:
+            @deprecated{Message := "Use d instead.", DiscontinuedAtFNVersion := 2000}
+            c := class<computes>{}
+            @deprecated{Message := "Use NewX instead.", DiscontinuedAtFNVersion := 2000}
+            X:?c=false
+
+# Non-user-scope packages are not tracked: a PublicAPI package referencing a
+# @deprecated definition from another PublicAPI package emits no telemetry.
+assert_valid(?ExpectUseOfDeprecatedDefinition:=false, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P0, /Verse.org/A, ?Scope:=PublicAPI):
+        snippet:
+            @deprecated{Message := "Use class2 instead."}
+            class1<public> := class{}
+    vpackage(P1, /Verse.org/B, ?Scope:=PublicAPI, ?Dependencies:=(P0)):
+        snippet:
+            @deprecated{Message := "Use G instead."}
+            F(:A.class1):void = {}
+
+# -----------------------------------------------------------------------
+# Propagation through non-module containers.
+#
+# Marking a class/struct/interface/enum @deprecated propagates the marker
+# to every member it lexically contains, mirroring the existing module-
+# level propagation. Once the container reaches DiscontinuedAtFNVersion,
+# code touching its members fails to compile too, so the warning has to
+# fire ahead of that cutoff. Inheritance (an override of a deprecated
+# base) is intentionally NOT covered here - overrides are handled at the
+# accessibility-root level by ValidateDefinitionUseOrOverride, not by
+# lexical scope propagation.
+# -----------------------------------------------------------------------
+
+# Method call on an instance of a @deprecated class is recorded.
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use class2 instead."}
+            class1 := class:
+                Foo<public>():void = {}
+            @deprecated{Message := "Use G instead."}
+            F():void =
+                C1 := class1{}
+                C1.Foo()
+
+# Field access on a @deprecated struct is recorded.
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use struct2 instead."}
+            struct1 := struct:
+                x<public>:int = 0
+            @deprecated{Message := "Use G instead."}
+            F():int =
+                Inst := struct1{x := 1}
+                Inst.x
+
+# Enumerator reference of a @deprecated enum is recorded.
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use enum2 instead."}
+            enum1 := enum{Apple, Banana}
+            @deprecated{Message := "Use Y instead."}
+            X:enum1 = enum1.Apple
+
+# Propagation is transitive: a module nested inside a @deprecated module
+# propagates to its descendants. (Verse doesn't yet allow nested class
+# definitions per V3502, so this exercises module-in-module nesting.)
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use outer2 instead."}
+            outer := module:
+                inner<public> := module:
+                    Foo<public>():void = {}
+            @deprecated{Message := "Use G instead."}
+            F():void = outer.inner.Foo()
+
+# Propagation does NOT flow upward: a class with one @deprecated member is not
+# itself deprecated, so references to other members do not record telemetry.
+assert_valid(?ExpectUseOfDeprecatedDefinition:=false, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            class1 := class:
+                @deprecated{Message := "Use Bar instead."}
+                Foo<public>():void = {}
+                Bar<public>():void = {}
+            F():void =
+                C1 := class1{}
+                C1.Bar()
+
+# Members of a @deprecated class at/above DiscontinuedAtFNVersion route to the
+# discontinued bucket, matching the inline-attribute case at line 569.
+assert_valid(?ExpectUseOfDeprecatedDefinition:=false, ?ExpectUseOfDiscontinuedDefinition:=true):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2500):
+        snippet:
+            @deprecated{Message := "Use class2 instead.", DiscontinuedAtFNVersion := 2000}
+            class1 := class:
+                Foo<public>():void = {}
+            @deprecated{Message := "Use G instead.", DiscontinuedAtFNVersion := 2000}
+            F():void =
+                C1 := class1{}
+                C1.Foo()
+
+# Override of a method in a @deprecated base class. Three V2009 warnings fire, one per
+# distinct use site:
+#  1. `class(Base)` - the inheritance reference uses Base directly (Base is @deprecated).
+#  2. `Foo<override>()` - the override declaration sees the overridden Base.Foo as
+#     deprecated-by-propagation (Foo's enclosing scope is Base). SOL-9232 would suppress
+#     this if the override were itself marked @deprecated; it isn't, so it warns.
+#  3. `D.Foo()` - the call resolves to Derived.Foo, whose accessibility root is Base.Foo;
+#     GetDeprecatedSource on the root finds Base. The call site is a use of a deprecated
+#     definition regardless of which static override is being called.
+assert_semantic_error(2009, 2009, 2009):
+    @deprecated{Message := "Use NewBase instead."}
+    Base := class:
+        Foo<public>():void = {}
+    Derived := class(Base):
+        Foo<override>():void = {}
+    F(D:Derived):void = D.Foo()
+
+# Propagation also works through parametric class instantiations. The visitor surfaces the
+# instantiation (e.g. parametric_class(int)); GetDefinitionAccessibilityRoot() walks to the
+# prototype; FindAttributeSource then walks the prototype's enclosing scopes and finds the
+# @deprecated on the parametric class itself. One V2009 warning fires on the type reference
+# at F's parameter site - the leaf is reached via the prototype, and the propagation source
+# is the parametric class itself.
+assert_semantic_error(2009):
+    @deprecated{Message := "Use parametric_class2 instead."}
+    parametric_class(t:type) := class{}
+    F(:parametric_class(int)):void = {}
+
+# Member access on an instance of a parametric @deprecated class also propagates - the
+# instantiation's Foo resolves to the prototype's Foo, whose enclosing scope is the
+# (parametric) class prototype that carries @deprecated. F is itself @deprecated to
+# suppress the V2009 warnings so this test focuses on telemetry routing.
+assert_valid(?ExpectUseOfDeprecatedDefinition:=true, ?ExpectUseOfDiscontinuedDefinition:=false):
+    vpackage(P, /Verse.org/A, ?Scope:=InternalUser):
+        snippet:
+            @deprecated{Message := "Use parametric_class2 instead."}
+            parametric_class(t:type) := class:
+                Foo<public>():void = {}
+            @deprecated{Message := "Use G instead."}
+            F(C:parametric_class(int)):void = C.Foo()

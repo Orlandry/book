@@ -317,16 +317,33 @@ assert_valid      { s := struct<allocates>{} }
 assert_valid      { s := struct<writes>{} }
 assert_valid      { s := struct<transacts>{} }
 
-# async and decides effects aren't allowed on classes and structs.
+assert_valid      { i := interface<computes>{} }
+assert_valid      { i := interface<reads>{} }
+assert_valid      { i := interface<allocates>{} }
+assert_valid      { i := interface<writes>{} }
+assert_valid      { i := interface<transacts>{} }
+
+# async and decides effects aren't allowed on classes, structs, or interfaces.
 assert_semantic_error(3512){ c := class<suspends>{} }
 assert_semantic_error(3512){ c := class<decides>{} }
 
 assert_semantic_error(3512){ c := struct<suspends>{} }
 assert_semantic_error(3512){ c := struct<decides>{} }
 
+assert_semantic_error(3512){ i := interface<suspends>{} }
+assert_semantic_error(3512){ i := interface<decides>{} }
+
 # Classes must have at least the effects of their super class.
 assert_semantic_error(3512){ c1:=class{};       c2:=class<computes>(c1){}; c3:=class<computes>(c2){} }
 assert_valid               { c1:=class<computes>{}; c2:=class<computes>(c1){}; c3:=class<computes>(c2){} }
+
+# The same rule applies across an interface super-edge: a subtype may widen (add) effects relative to
+# its super-type, but not narrow them -- whether an interface inherits an interface or a class
+# implements an interface.
+assert_valid               { i1:=interface<computes>{};  i2:=interface<transacts>(i1){} }
+assert_semantic_error(3512){ i1:=interface<transacts>{}; i2:=interface<computes>(i1){} }
+assert_valid               { i:=interface<computes>{};   c:=class<transacts>(i){} }
+assert_semantic_error(3512){ i:=interface<transacts>{};  c:=class<computes>(i){} }
 
 # Don't allow effect attributes on the other class macro clauses.
 assert_semantic_error(3604, 3604){ c  := class()<computes>{} }

@@ -1,0 +1,19 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+box := class<unique>:
+    var X:int = 0
+
+operator'+'(L:string, R:box):box =
+    L = "Foo" or Err("Bad LHS")
+    R
+
+ToString(Box:box):box =
+    set Box.X += 1
+    Box
+
+assert:
+    var Box:box = box{}
+    Box.X = 0
+    Result := "Foo{Box}"
+    Box.X = 1
+    Result = Box

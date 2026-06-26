@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # --- Public ---
 assert_valid
 {
@@ -46,14 +48,10 @@ assert_valid
 }
 
 # --- Private ---
-# Disabled to work around UE-234933
-<# 
-verse_vm_todo
-{
 assert_semantic_error(3593)
 {
     A := interface:
-        
+
         myMember<private>:int = 7
 
     B := class(A):
@@ -64,20 +62,18 @@ assert_semantic_error(3593)
 assert_semantic_error(3593)
 {
     A := interface:
-        
+
         myMember<private>:int = 8
 
     B := class:
         myFunction(param:A):int=
             param.myMember
 }
-}
-#>
 
 assert_semantic_error(3593)
 {
     A := interface:
-        
+
         myFunction<private>():int=
             5
 
@@ -99,14 +95,10 @@ assert_semantic_error(3593)
 }
 
 # --- Protected ---
-# Disabled to work around UE-234933
-<# 
-verse_vm_todo
-{
 assert_valid
 {
     A := interface:
-        
+
         myMember<protected>:int = 7
 
     B := class(A):
@@ -117,20 +109,18 @@ assert_valid
 assert_semantic_error(3593)
 {
     A := interface:
-        
+
         myMember<protected>:int = 8
 
     B := class:
         myFunction(param:A):int=
             param.myMember
 }
-}
-#>
 
 assert_valid
 {
     A := interface:
-        
+
         myFunction<protected>():int=
             5
 
@@ -268,15 +258,9 @@ assert_semantic_error(3543):
         myFunction<public><internal>():int=
             return (42)
 
-# Disabled to work around UE-234933
-<# 
-verse_vm_todo
-{
 assert_semantic_error(3543):
     A := interface:
         myData<public><private><protected><internal>:int = 42
-}
-#>
 
 # Allow ambiguity as long as only one choice is accessible
 <#   
@@ -312,3 +296,17 @@ assert_valid                {access_test_i10<public> := interface<internal> {Acc
 assert_valid                {access_test_i11<public> := interface<internal> {AccessTestX<internal>:int}}
 assert_semantic_error(3593) {access_test_i12<public> := interface<internal> {AccessTestX<protected>:int}}
 assert_semantic_error(3593) {access_test_i13<public> := interface<internal> {AccessTestX<private>:int}}
+
+# An epic_internal interface constructor follows the same rule as a class one (cf. access_test_c21-c25
+# in Classes/AccessSpecifiers.versetest): a member with no default must be at least as accessible as
+# the constructor.
+assert_valid                {access_test_i14<epic_internal> := interface {AccessTestX<public>:int}}
+assert_semantic_error(3593) {access_test_i15<epic_internal> := interface {AccessTestX<internal>:int}}
+assert_semantic_error(3593) {access_test_i16<epic_internal> := interface {AccessTestX<protected>:int}}
+assert_semantic_error(3593) {access_test_i17<epic_internal> := interface {AccessTestX<private>:int}}
+assert_valid                {access_test_i18<epic_internal> := interface {AccessTestX<epic_internal>:int}}
+
+# A default value waives that requirement, since the constructor no longer needs the caller to
+# supply the field.
+assert_valid                {access_test_i19<epic_internal> := interface {AccessTestX<protected>:int = 0}}
+assert_valid                {access_test_i20<epic_internal> := interface {AccessTestX<private>:int = 0}}

@@ -1,3 +1,4 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
 
 # Uninitialized locals should produce an error
 assert_semantic_error(3601):

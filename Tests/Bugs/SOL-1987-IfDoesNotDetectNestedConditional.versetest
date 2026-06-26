@@ -1,3 +1,4 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
 
 assert_valid:  # This one is only for reference
     test_class := class:

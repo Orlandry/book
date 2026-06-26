@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Test that the side-effects of the range subexpressions are still evaluated even if the range isn't used.
 # Also test that the range LHS subexpression is evaluated before the RHS subexpression.
 C0 := class:

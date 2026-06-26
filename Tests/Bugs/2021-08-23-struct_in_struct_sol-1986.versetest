@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # The bug was triggerd by importing vector2i and then use it inside another struct.
 # Need change set up to include Math to add this test to make this a regression test for sol-1986. 
 # This file is a reminder. 

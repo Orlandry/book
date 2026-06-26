@@ -1,0 +1,125 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+# BitAnd
+assert { BitAnd(12, 10) = 8 }
+assert { BitAnd(0, 0) = 0 }
+assert { BitAnd(0, 12345) = 0 }
+assert { BitAnd(-1, 12345) = 12345 }
+assert { BitAnd(-1, -1) = -1 }
+assert { BitAnd(-2, 3) = 2 }
+assert { BitAnd(-2, -3) = -4 }
+assert { BitAnd(9223372036854775807, 9223372036854775807) = 9223372036854775807 }
+assert { BitAnd(-9223372036854775808, -9223372036854775808) = -9223372036854775808 }
+assert { BitAnd(9223372036854775807, -9223372036854775808) = 0 }
+
+# BitOr
+assert { BitOr(12, 10) = 14 }
+assert { BitOr(0, 0) = 0 }
+assert { BitOr(0, 12345) = 12345 }
+assert { BitOr(-1, 0) = -1 }
+assert { BitOr(-1, -1) = -1 }
+assert { BitOr(9223372036854775807, -9223372036854775808) = -1 }
+assert { BitOr(-9223372036854775808, 0) = -9223372036854775808 }
+
+# BitXor
+assert { BitXor(12, 10) = 6 }
+assert { BitXor(0, 12345) = 12345 }
+assert { BitXor(12345, 12345) = 0 }
+assert { BitXor(-1, -1) = 0 }
+assert { BitXor(-1, 0) = -1 }
+assert { BitXor(9223372036854775807, -1) = -9223372036854775808 }
+assert { BitXor(9223372036854775807, -9223372036854775808) = -1 }
+
+# BitNot: ~X = -X - 1
+assert { BitNot(0) = -1 }
+assert { BitNot(-1) = 0 }
+assert { BitNot(12) = -13 }
+assert { BitNot(9223372036854775807) = -9223372036854775808 }
+assert { BitNot(-9223372036854775808) = 9223372036854775807 }
+assert { BitNot(4294967295) = -4294967296 }
+assert { BitNot(BitNot(123456789)) = 123456789 }
+
+# Identities and laws
+assert { BitOr(BitAnd(-1, 12345), 0) = 12345 }
+assert { BitXor(BitXor(987654321, 12345), 12345) = 987654321 }
+assert { BitNot(BitAnd(15, 9)) = BitOr(BitNot(15), BitNot(9)) }
+assert { BitNot(BitOr(15, 9)) = BitAnd(BitNot(15), BitNot(9)) }
+
+
+# Out of range
+bp_vm_only{
+assert_runtime_error{BitAnd(9223372036854775807 + 1, 1)}
+assert_runtime_error{BitAnd(1, 9223372036854775807 + 1)}
+assert_runtime_error{BitOr(9223372036854775807 + 1, 0)}
+assert_runtime_error{BitXor(9223372036854775807 + 1, 0)}
+assert_runtime_error{BitNot(9223372036854775807 + 1)}
+assert_runtime_error{BitNot(-9223372036854775808 - 1)}
+}
+
+verse_vm_only{
+assert{BitAnd(9223372036854775807 + 1, 1) = 0}
+assert{BitAnd(1, 9223372036854775807 + 1) = 0}
+assert{BitOr(9223372036854775807 + 1, 0) = 9223372036854775807 + 1}
+assert{BitXor(9223372036854775807 + 1, 0) = 9223372036854775807 + 1}
+assert{BitNot(9223372036854775807 + 1) = -(9223372036854775807 + 2)}
+assert{BitNot(-9223372036854775808 - 1) = 9223372036854775807 + 1}
+}
+
+# Multi-digit (beyond 2^64) - exercises the VHeapInt bignum path
+verse_vm_only{
+Pow2_64 : int = (9223372036854775807 + 1) * 2
+assert{BitOr(Pow2_64, 1) = Pow2_64 + 1}
+
+# AND: mixed-sign matrix
+assert{BitAnd(Pow2_64, Pow2_64) = Pow2_64}
+assert{BitAnd(-Pow2_64, -Pow2_64) = -Pow2_64}
+assert{BitAnd(Pow2_64, -Pow2_64) = Pow2_64}
+assert{BitAnd(-Pow2_64, -1) = -Pow2_64}
+assert{BitAnd(-Pow2_64, 7) = 0}
+
+# OR: mixed-sign matrix
+assert{BitOr(Pow2_64, Pow2_64) = Pow2_64}
+assert{BitOr(-Pow2_64, -Pow2_64) = -Pow2_64}
+assert{BitOr(Pow2_64, -Pow2_64) = -Pow2_64}
+assert{BitOr(-Pow2_64, -1) = -1}
+assert{BitOr(-Pow2_64, 7) = -Pow2_64 + 7}
+
+# XOR: mixed-sign matrix
+assert{BitXor(Pow2_64, Pow2_64) = 0}
+assert{BitXor(-Pow2_64, -Pow2_64) = 0}
+assert{BitXor(Pow2_64, -Pow2_64) = -(Pow2_64 * 2)}
+
+# NOT: mixed-sign matrix
+assert{BitNot(Pow2_64) = -(Pow2_64 + 1)}
+assert{BitNot(-Pow2_64) = Pow2_64 - 1}
+assert{BitNot(BitNot(Pow2_64)) = Pow2_64}
+assert{BitNot(BitNot(-Pow2_64)) = -Pow2_64}
+}
+
+# NaN / float is a type error
+assert_semantic_error(3509){f():void=BitAnd(NaN, 1)}
+assert_semantic_error(3509){f():void=BitAnd(1, NaN)}
+assert_semantic_error(3509){f():void=BitOr(NaN, 1)}
+assert_semantic_error(3509){f():void=BitOr(1, NaN)}
+assert_semantic_error(3509){f():void=BitXor(NaN, 1)}
+assert_semantic_error(3509){f():void=BitXor(1, NaN)}
+assert_semantic_error(3509){f():void=BitNot(NaN)}
+
+# @available: first available at FN 42.00 (MinUploadedAtFNVersion 4200)
+assert_valid:
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=4200):
+        snippet:
+            A:int = BitAnd(12, 10)
+            B:int = BitOr(12, 10)
+            C:int = BitXor(12, 10)
+            D:int = BitNot(12)
+
+assert_semantic_error(3506, 3506, 3506, 3506):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=4199):
+        snippet:
+            A:int = BitAnd(12, 10)
+            B:int = BitOr(12, 10)
+            C:int = BitXor(12, 10)
+            D:int = BitNot(12)

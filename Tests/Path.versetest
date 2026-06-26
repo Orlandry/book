@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Path tests
 # Import bad module name
 assert_semantic_error(3587):

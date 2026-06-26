@@ -1,0 +1,45 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Runtime `assert`s in explicit `vpackage`s (with specific scopes/VRI paths) cannot be relocated by
+# `--qualify-identifiers`, so skip that one variant; the tests still run in all other configurations.
+auto_qualify_todo{
+
+# A creator routes the Epic API call through a native callback (TestUtils.InvokeTransacts, a
+# Verse -> C++ -> Verse re-entry that is NOT a yield boundary). The surfaced foreign-native frame in
+# the tracking chain must not inflate the resolved caller depth: the API still reports on the creator
+# callback that called it, never the Epic API frame -> denied on both VMs.
+#
+# CallEpic fails (decides) iff the API denied access, so a denied creator makes InvokeTransacts fail.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+vpackage(CallbackEpicLib, /Verse.org/CanCallerTest/CallbackLib, ?Scope:=InternalAPI, ?Dependencies:=("Verse/Verse")):
+    snippet:
+        PublicLib<public> := module:
+            EpicApi<public>()<transacts>:logic = CanCallerAccessEpicInternal()
+
+vpackage(CallbackUser, /NotVerse.org/CanCallerTest/Callback, ?Dependencies:=(CallbackEpicLib, "Engine/VerseTestScriptCmd", "Verse/Verse")):
+    vmodule(CallbackMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/CallbackLib/PublicLib }
+            using { /Verse.org/Tests/VerseTestScriptCmd }
+
+            CallEpic()<transacts><decides>:void =
+                EpicApi()?
+
+            assert:
+                not TestUtils.InvokeTransacts[CallEpic]
+
+# Same, but through a nested transaction (extra native frame) to confirm depth stays anchored.
+vpackage(CallbackNestedUser, /NotVerse.org/CanCallerTest/CallbackNested, ?Dependencies:=(CallbackEpicLib, "Engine/VerseTestScriptCmd", "Verse/Verse")):
+    vmodule(CallbackNestedMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/CallbackLib/PublicLib }
+            using { /Verse.org/Tests/VerseTestScriptCmd }
+
+            CallEpic()<transacts><decides>:void =
+                EpicApi()?
+
+            assert:
+                not TestUtils.InvokeTransactsNested[CallEpic]
+}

@@ -1,0 +1,72 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+#
+# Pins the three input shapes the .Length codegen optimization
+# (RefGet + ResolveIfAccessor) must handle correctly: VRef on plain class
+# fields, VNativeRef on native fields, and VAccessorRef on accessor-backed
+# fields (where ResolveIfAccessor falls back to CallGetter).
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+# VRef -- plain class var, non-native array and map.
+plain_class := class:
+    var Items:[]int = array{1, 2, 3, 4, 5}
+    var ItemMap:[int]int = map{0 => 10, 1 => 20, 2 => 30}
+    var Text:string = "hello"
+    Title:string = "hi"
+
+assert:
+    P:plain_class = plain_class{}
+    P.Items.Length = 5
+    P.ItemMap.Length = 3
+    P.Text.Length = 5
+    P.Title.Length = 2
+
+# VNativeRef -- native_deeply_mutable field; LengthImpl reads Num() through
+# VNativeRef::GetLength on FScriptArrayHelper / FScriptMapHelper.
+assert:
+    N := native_deeply_mutable{Array := array{3, 5, 8}}
+    N.Array.Length = 3
+
+assert:
+    N := native_deeply_mutable{Map := map{0 => 3, 1 => 5, 2 => 8}}
+    N.Map.Length = 3
+
+assert:
+    N := native_deeply_mutable{String := "abc"}
+    N.String.Length = 3
+
+# VAccessorRef -- getter must run; what Length sees is the getter's result.
+class_with_direct_accessors := class:
+    var Items<getter(GetItems)><setter(SetItems)>:[]int = external{}
+
+    var ItemsData:[]int = array{100, 200, 300}
+    GetItems(:accessor)<transacts>:[]int = ItemsData
+    GetItems(:accessor, Pos:int)<transacts><decides>:int = ItemsData[Pos]
+    SetItems(:accessor, V:[]int)<transacts>:void = set ItemsData = V
+    SetItems(:accessor, Pos:int, V:int)<transacts><decides>:void = set ItemsData[Pos] = V
+
+assert:
+    A:class_with_direct_accessors = class_with_direct_accessors{}
+    A.Items.Length = 3
+
+# Cross-type: subclass adds accessors to an interface var. Access via the
+# subclass and via the interface both reach the same accessor at runtime.
+iface_no_accessors<public> := interface:
+    var Items:[]int = array{1, 2, 3, 4}
+
+class_adds_accessors := class(iface_no_accessors):
+    var Items<override><getter(GetItems)><setter(SetItems)>:[]int = external{}
+
+    var ItemsData:[]int = array{10, 20, 30, 40, 50, 60}
+    GetItems(:accessor)<transacts>:[]int = ItemsData
+    GetItems(:accessor, Pos:int)<transacts><decides>:int = ItemsData[Pos]
+    SetItems(:accessor, V:[]int)<transacts>:void = set ItemsData = V
+    SetItems(:accessor, Pos:int, V:int)<transacts><decides>:void = set ItemsData[Pos] = V
+
+assert:
+    Direct:class_adds_accessors = class_adds_accessors{}
+    Direct.Items.Length = 6
+
+assert:
+  Iface:iface_no_accessors = class_adds_accessors{}
+  Iface.Items.Length = 6

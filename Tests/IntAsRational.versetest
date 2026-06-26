@@ -1,0 +1,26 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# `int` is a subtype of `rational`, so an integer can flow at runtime into code that
+# expects a rational: Floor/Ceil, and equality/inequality against another rational.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+PositiveRational:rational = 5
+NegativeRational:rational = -5
+ZeroRational:rational = 0
+
+assert{Floor(PositiveRational) = 5}
+assert{Ceil(PositiveRational) = 5}
+assert{Floor(NegativeRational) = -5}
+assert{Ceil(NegativeRational) = -5}
+assert{Floor(ZeroRational) = 0}
+assert{Ceil(ZeroRational) = 0}
+
+# A rational that reduces to a whole number compares equal to the corresponding int.
+assert{(10/2) = 5}
+assert{5 = (10/2)}
+assert{(-10/2) = -5}
+assert{(10/2) <> 6}
+assert{6 <> (10/2)}
+assert{(1/2) <> 1}
+assert{1 <> (1/2)}

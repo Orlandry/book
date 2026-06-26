@@ -376,18 +376,121 @@ assert:
     Value1:classA = classA{}
 
 #####################
-# <castable> and castable_subtype are only visible at  FNv32.00 and later
-assert_semantic_error(3506):
+# castable_subtype / concrete_subtype / castable_concrete_subtype parse at all
+# FN versions; below each predicate's introduction version they silently
+# downgrade to plain subtype. Such packages cannot reach any API that
+# distinguishes the wrapped form from plain subtype anyway, so the conversion
+# is semantics-preserving.
+
+# castable_subtype below FNv32.00 - parses and downgrades to plain subtype.
+assert_valid:
     vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
         snippet:
             CT<public> := class{}
             F<public>(T:castable_subtype(CT)):int= 42
 
+# castable_subtype at FNv32.00 - parses; semantics are still subtype-equivalent
+# until FNv37.00 (the existing EnforceCastableSubtype gate, unchanged).
 assert_valid:
     vpackage(P0, /A, ?UploadedAtFNVersion:=3200, ?Scope:=PublicAPI):
         snippet:
             CT<public> := class{}
             F<public>(T:castable_subtype(CT)):int= 42
+
+# Below FNv32.00, the downgrade reaches actual call-site semantics: a
+# non-castable class satisfies castable_subtype because it's plain subtype.
+assert_valid:
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            interface1<public> := interface {}
+            class1<public> := class(interface1) {}
+            F<public>(:castable_subtype(interface1)):void = {}
+            G<public>():void = F(class1)
+
+# concrete_subtype below FNv37.00 - parses and downgrades to plain subtype.
+assert_valid:
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            CT<public> := class{}
+            F<public>(T:concrete_subtype(CT)):int= 42
+
+# concrete_subtype at FNv37.00 - parses with enforcement.
+assert_valid:
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3700, ?Scope:=PublicAPI):
+        snippet:
+            CT<public> := class<concrete>{}
+            F<public>(T:concrete_subtype(CT)):int= 42
+
+# Below FNv37.00, the downgrade reaches semantics: a non-concrete class
+# satisfies concrete_subtype because it's plain subtype.
+assert_valid:
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            class1<public> := class {}
+            F<public>(:concrete_subtype(class1)):void = {}
+            G<public>():void = F(class1)
+
+# castable_concrete_subtype below FNv40.00 - parses and downgrades.
+assert_valid:
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            CT<public> := class{}
+            F<public>(T:castable_concrete_subtype(CT)):int= 42
+
+# castable_concrete_subtype at FNv40.00 - parses with enforcement.
+assert_valid:
+    vpackage(P0, /A, ?UploadedAtFNVersion:=4000, ?Scope:=PublicAPI):
+        snippet:
+            CT<public> := class<castable><concrete>{}
+            F<public>(T:castable_concrete_subtype(CT)):int= 42
+
+# Below FNv40.00, the downgrade reaches semantics: a class with neither
+# <castable> nor <concrete> satisfies castable_concrete_subtype because
+# it's plain subtype.
+assert_valid:
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            class1<public> := class {}
+            F<public>(:castable_concrete_subtype(class1)):void = {}
+            G<public>():void = F(class1)
+
+# Below each name's reservation version, a user can legally declare a function
+# or parametric type with that name - only warning #2015 fires, not error 3514.
+# This is why the data-definition routing site preserves the version gate: a
+# user definition `castable_subtype<public>(t:type) := ...` is reachable in
+# low-FN packages. (Call sites in expression positions still flow through the
+# AnalyzeInvocation downgrade; these tests only verify the declaration is
+# permitted with a warning, mirroring the existing FN-default 3514 tests in
+# Subtype.versetest.)
+assert_semantic_error(2015):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            castable_subtype<public>(t:type) := class { Tag<public>:int = 42 }
+
+assert_semantic_error(3514):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3200, ?Scope:=PublicAPI):
+        snippet:
+            castable_subtype<public>(t:type) := class { Tag<public>:int = 42 }
+
+assert_semantic_error(2015):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            concrete_subtype<public>(t:type) := class { Tag<public>:int = 42 }
+
+assert_semantic_error(3514):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3600, ?Scope:=PublicAPI):
+        snippet:
+            concrete_subtype<public>(t:type) := class { Tag<public>:int = 42 }
+
+assert_semantic_error(2015):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=3000, ?Scope:=PublicAPI):
+        snippet:
+            castable_concrete_subtype<public>(t:type) := class { Tag<public>:int = 42 }
+
+assert_semantic_error(3514):
+    vpackage(P0, /A, ?UploadedAtFNVersion:=4000, ?Scope:=PublicAPI):
+        snippet:
+            castable_concrete_subtype<public>(t:type) := class { Tag<public>:int = 42 }
 
 <#> TODO: Need to address that we can't use versions to hide intrinsic attribute class-types
     assert_semantic_error(2015):

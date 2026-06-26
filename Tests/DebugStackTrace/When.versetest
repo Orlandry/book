@@ -1,0 +1,29 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+IsDebugStackTraceSupported()<computes>:logic =
+    bp_vm_only    { IsDebuggerEnabled() }
+    verse_vm_only { true }
+
+# Test stack crawls that include when-triggered tasks.
+WhenTriggered()<transacts>:void =
+    if (IsDebugStackTraceSupported()?):
+        Frames := DebugStackTrace()
+
+        if:
+            Frames[0] = "(/Verse.org/VerseTests:)WhenTriggered:12"
+            Frames[1] = "TestWhen:23"
+        else:
+            Err("stack crawl does not match expectations")
+
+TestWhen()<suspends>:void =
+    verse_vm_only:
+        var X:int = 0
+        when (X > 0):
+            WhenTriggered()
+        set X = 1
+
+assert:
+    spawn:
+        TestWhen()

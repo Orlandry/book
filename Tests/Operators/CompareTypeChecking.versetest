@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Assert that ints are comparable for equality and order.
 assert_valid { f(a:int, b:int)<transacts><decides>:int = { return(a <  b) } }
 assert_valid { f(a:int, b:int)<transacts><decides>:int = { return(a <= b) } }

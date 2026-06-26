@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 sum_v0(nums:[]int):int =
     var curSum:int = 0
     for(n:nums). set curSum += n  # Mathematical style

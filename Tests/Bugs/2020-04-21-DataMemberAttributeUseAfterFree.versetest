@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Declare enough attributed data members that the class's data member array should be reallocated after the initial allocation.
 assert_valid:
     C := class:

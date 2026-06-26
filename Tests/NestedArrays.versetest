@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 test_class := class{ X:int, Y:int }
 
 container_class := class { nested_array:[][]test_class = for(i:=0..2) { for(j:=0..4) { test_class{ X:=i, Y:=j} } } }

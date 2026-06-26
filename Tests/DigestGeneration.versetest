@@ -12,6 +12,7 @@ assert_digest_generated
                     FieldC<public>:int = 42
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
             Class<public> := class:
@@ -39,6 +40,7 @@ assert_digest_generated
                     FieldF<public>:int = 42
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
             (/A/Module:)Class<public> := class:
@@ -66,12 +68,14 @@ assert_digest_generated
                     FieldC<epic_internal>():void = {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
             Class<public> := class:
                 FieldA<public>():void = external{}
 
     expected_digest(Package := P0, ?Variant := PublicAndEpicInternal):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
             Class<public> := class:
@@ -96,6 +100,7 @@ assert_digest_generated
                     FieldB<public>():void = {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
             Class<public> := class:
@@ -119,6 +124,7 @@ assert_digest_generated
                     FieldB<override>():int = 100
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
             Class<public> := class:
@@ -141,10 +147,12 @@ assert_digest_generated
                     Method<override>():float = { return 0.0 }
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
 
     expected_digest(Package := P0, ?Variant := PublicAndEpicInternal):
+        # Verse path: /A
         # Module import path: /A/Module
         Module<public> := module:
             Interface<epic_internal>(t:type) := interface:
@@ -234,6 +242,7 @@ assert_digest_generated
             class1<public>(t:type) := class{}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
 }
 
@@ -246,6 +255,7 @@ assert_digest_generated
                 Data<private>:?t = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance<private>():tuple(t) = external{}
 }
@@ -259,6 +269,7 @@ assert_digest_generated
                 Method<private>(:t):void = {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance<private>(:t):tuple() = external{}
 }
@@ -272,6 +283,7 @@ assert_digest_generated
                 Method<private>(X:t):t = X
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance<private>(:t):tuple(t) = external{}
 }
@@ -286,6 +298,7 @@ assert_digest_generated
                 Data<private>:?u = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type, u:type) := class:
             (/A/class1:)class1_Variance<private>(:t):tuple(t, u) = external{}
 }
@@ -302,6 +315,7 @@ assert_digest_generated
                 Data2<private>:class1(int) = class1(int){}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance<private>():tuple(t) = external{}
         class2<public>(u:type) := class:
@@ -317,6 +331,7 @@ assert_digest_generated
                 var Data<private>:?t = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             var (/A/class1:)class1_VarVariance<private>:?tuple(t) = external{}
 }
@@ -329,6 +344,7 @@ assert_digest_generated
                 var Data<private>:?tuple(t, t) = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             var (/A/class1:)class1_VarVariance<private>:?tuple(t) = external{}
 }
@@ -341,6 +357,7 @@ assert_digest_generated
                 var Data<private>:?type{_(:t):void} = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             var (/A/class1:)class1_VarVariance<private>:?tuple(t) = external{}
 }
@@ -353,6 +370,7 @@ assert_digest_generated
                 var Data<private>:?type{_(:t):t} = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             var (/A/class1:)class1_VarVariance<private>:?tuple(t) = external{}
 }
@@ -366,6 +384,7 @@ assert_digest_generated
                 var Data2<private>:?u = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type, u:type) := class:
             var (/A/class1:)class1_VarVariance<private>:?tuple(t, u) = external{}
 }
@@ -379,6 +398,7 @@ assert_digest_generated
                 var Data2<private>:?u = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type, u:type) := class:
             (/A/class1:)class1_Variance<private>():tuple(t) = external{}
             var (/A/class1:)class1_VarVariance<private>:?tuple(u) = external{}
@@ -393,6 +413,7 @@ assert_digest_generated
                 var Data2<private>:?t = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance<private>():tuple(t) = external{}
             var (/A/class1:)class1_VarVariance<private>:?tuple(t) = external{}
@@ -409,6 +430,7 @@ assert_digest_generated
             class2<public>(t:type) := class(class1(t)) {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance<private>():tuple(t) = external{}
@@ -434,6 +456,7 @@ assert_digest_generated
                 Data:?t = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             class2_Variance<public>:int = external{}
         class2<public>(t:type) := class(class1(t)):
@@ -450,6 +473,7 @@ assert_digest_generated
                 Class<public> := class{}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         @available{MinUploadedAtFNVersion:=1337}
         # Module import path: /A/Module
@@ -471,6 +495,7 @@ assert_digest_generated
                 Class<public> := class{}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         @available{MinUploadedAtFNVersion:=1337}
         # Module import path: /A/Module
@@ -499,6 +524,7 @@ assert_digest_generated
                 Class2<public> := (Module:)Class
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         @available{MinUploadedAtFNVersion:=1337}
         # Module import path: /A/Module
@@ -532,6 +558,7 @@ assert_digest_generated
                 Foo<public>(C1:(/A/Module:)Class, C2:(/A/Module2:)Class):void := {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         # Module import path: /A/Module
         Module<public> := module:
@@ -570,6 +597,7 @@ assert_digest_generated
                 Foo<public>(C1:(/A/Module:)Class, C2:(/A/Module2:)Class):void := {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         # Module import path: /A/Module
         Module<public> := module:
@@ -610,6 +638,7 @@ assert_digest_generated
                 Foo<public>(C1:(/A/Module:)Class, C2:(/A/Module2:)Class):void := {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         @available{MinUploadedAtFNVersion:=1337}
         # Module import path: /A/Module
@@ -652,6 +681,7 @@ assert_digest_generated
                 Foo<public>(C1:(/A/Module/InnerModule:)Class, C2:(/A/Module2/InnerModule:)Class):void := {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         # Module import path: /A/Module
         Module<public> := module:
@@ -701,6 +731,7 @@ assert_digest_generated
                 Foo<public>(C1:(/A/Module/InnerModule:)Class, C2:(/A/Module2/InnerModule:)Class):void := {}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         @available{MinUploadedAtFNVersion:=1337}
         # Module import path: /A/Module
@@ -735,6 +766,7 @@ assert_digest_generated
                 Data2<public>:?t = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance<private>():tuple(t) = external {}
@@ -758,6 +790,7 @@ assert_digest_generated
                 class1_Variance:int = 0
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance0<private>():tuple(t) = external{}
 }
@@ -771,6 +804,7 @@ assert_digest_generated
                 Data:?t = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1_Variance<public>:int = external{}
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance0<private>():tuple(t) = external{}
@@ -787,6 +821,7 @@ assert_digest_generated
                 class1_Variance0:int = 0
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         class1<public>(t:type) := class:
             (/A/class1:)class1_Variance1<private>():tuple(t) = external{}
 }
@@ -800,6 +835,7 @@ assert_digest_generated
                 Data:?t = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         struct1<public>(t:type) := struct:
             Data:?t = external{}
 }
@@ -813,6 +849,7 @@ assert_digest_generated
                 Data<private>:?(t -> void) = false
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         interface1<public>(t:type) := interface:
             (/A/interface1:)interface1_Variance<private>(:t):tuple() = external{}
 }
@@ -828,6 +865,7 @@ assert_digest_generated
             public_interface<public>(t:type) := interface(internal_interface(t)){}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/Verse.org/Native}
         public_interface<public>(t:type) := interface:
             @available {MinUploadedAtFNVersion := 4000}
@@ -848,6 +886,7 @@ assert_digest_generated
                     First
 
     expected_digest(Package := P1, ?Variant := PublicOnly):
+        # Verse path: /Verse.org/Test
         # Module import path: /Verse.org/Test/Module
         Module<public> := module:
             using {/Verse.org/Native}
@@ -871,6 +910,7 @@ assert_digest_generated
                     First
 
     expected_digest(Package := P1, ?Variant := PublicOnly):
+        # Verse path: /Verse.org/Test
         using {/Verse.org/Native}
         @available{MinUploadedAtFNVersion := 1337}
         # Module import path: /Verse.org/Test/Module
@@ -895,6 +935,7 @@ assert_digest_generated
                     First
 
     expected_digest(Package := P1, ?Variant := PublicOnly):
+        # Verse path: /Verse.org/Test
         using {/Verse.org/Native}
         @available{MinUploadedAtFNVersion := 1337}
         # Module import path: /Verse.org/Test/Module
@@ -928,6 +969,7 @@ assert_digest_generated
                     First
 
     expected_digest(Package := P1, ?Variant := PublicOnly):
+        # Verse path: /Verse.org/Test
         using {/Verse.org/Native}
         @available {MinUploadedAtFNVersion := 1337}
         # Module import path: /Verse.org/Test/Module
@@ -969,6 +1011,7 @@ assert_digest_generated
                 Field<override>:int = 1
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /A
         using {/A}
         using {/Verse.org/Native}
         # Module import path: /A/Unrelated
@@ -1005,6 +1048,7 @@ assert_digest_generated
             MakeLocalizableValue<epic_internal>(V:llm_string):localizable_llm_string = localizable_llm_string{Value:=V.Value}
 
     expected_digest(Package := P0, ?Variant := PublicOnly):
+        # Verse path: /Verse.org/Verse
         localizable_value<epic_internal> := class:
 
         llm_string<epic_internal> := class:

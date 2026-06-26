@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert_semantic_error(3557){A := class(A) {}}
 assert_semantic_error(3557){A := class(B) {}; B := class(A) {}}
 assert_semantic_error(3557){Z := class(X) {}; X := class(Y) {}; Y := class(X) {}}

@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 ReturnsInt()<suspends>:int = 4
 
 ReturnsLogic()<suspends>:logic = false

@@ -1,0 +1,41 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Runtime `assert`s in explicit `vpackage`s (with specific scopes/VRI paths) cannot be relocated by
+# `--qualify-identifiers`, so skip that one variant; the tests still run in all other configurations.
+auto_qualify_todo{
+
+# Condition 1: VRI path, non-internal scope -> true
+vpackage(VriCaller, /Verse.org/CanCallerTest/Vri, ?Scope:=PublicAPI, ?Dependencies:=("Verse/Verse")):
+    vmodule(VriMod):
+        snippet:
+            Helper()<transacts>:logic = CanCallerAccessEpicInternal()
+            assert:
+                Helper()?
+
+# Condition 2: InternalUser scope on a non-VRI path -> true
+vpackage(InternalCaller, /NotVerse.org/CanCallerTest/Internal, ?Scope:=InternalUser, ?Dependencies:=("Verse/Verse")):
+    vmodule(InternalMod):
+        snippet:
+            Helper()<transacts>:logic = CanCallerAccessEpicInternal()
+            assert:
+                Helper()?
+
+# Neither condition: non-VRI path, non-internal scope -> false
+vpackage(EpicLib, /Verse.org/CanCallerTest/Lib, ?Scope:=InternalAPI, ?Dependencies:=("Verse/Verse")):
+    snippet:
+        PublicLib<public> := module:
+            Helper<public>()<transacts>:logic = CanCallerAccessEpicInternal()
+
+vpackage(UserCaller, /NotVerse.org/CanCallerTest/User, ?Dependencies:=(EpicLib)):
+    vmodule(UserMod):
+        snippet:
+            using { /Verse.org/CanCallerTest/Lib/PublicLib }
+            assert:
+                not Helper()?
+
+# A creator-authored package can't reach CanCallerAccessEpicInternal at all
+assert_semantic_error(3506):
+    vpackage(UserDirect, /NotVerse.org/CanCallerTest/Direct):
+        snippet:
+            F<public>()<transacts>:logic = CanCallerAccessEpicInternal()
+}

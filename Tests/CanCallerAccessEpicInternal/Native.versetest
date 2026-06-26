@@ -1,0 +1,29 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Runtime `assert`s in explicit `vpackage`s (with specific scopes/VRI paths) cannot be relocated by
+# `--qualify-identifiers`, so skip that one variant; the tests still run in all other configurations.
+auto_qualify_todo{
+
+# Stresses the depth-1 (C++ native body) form of CanCallerAccessEpicInternal. The Epic-authored
+# native TestCanCallerAccessEpicInternalFromNative calls CanNativeCallerAccessEpicInternal(), so it
+# inspects its own direct caller: Epic code -> true, creator code -> false.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+# Epic caller (path under /Verse.org) -> true.
+vpackage(NativeEpicCaller, /Verse.org/CanCallerTest/NativeEpic, ?Scope:=PublicAPI, ?Dependencies:=("Engine/VerseTestScriptCmd", "Verse/Verse")):
+    vmodule(NativeEpicMod):
+        snippet:
+            using { /Verse.org/Tests/VerseTestScriptCmd }
+            assert:
+                TestCanCallerAccessEpicInternalFromNative()?
+
+# Creator caller (non-Epic path, creator scope) calls the native directly so the inspected
+# depth-1 frame is the creator's own -> false.
+vpackage(NativeUserCaller, /NotVerse.org/CanCallerTest/NativeUser, ?Dependencies:=("Engine/VerseTestScriptCmd", "Verse/Verse")):
+    vmodule(NativeUserMod):
+        snippet:
+            using { /Verse.org/Tests/VerseTestScriptCmd }
+            assert:
+                not TestCanCallerAccessEpicInternalFromNative()?
+}

@@ -498,6 +498,13 @@ assert_semantic_error(3502):
         i<public>(t:type) := interface:
             var Data<public>:t
 
+assert_valid:
+    vpackage(P1,/A,?Role:=Source,?Scope:=PublicUser,?UploadedAtFNVersion:=4000):
+        snippet:
+            InterfaceVar := module:
+                i<public>(t:type) := interface:
+                    var Data<public>:t
+
 assert_semantic_error(3509):
     c(t:type) := class:
         var X:t
@@ -705,3 +712,25 @@ assert_valid:
             F(X:t where t:type):tuple(t, class2) = (X, class2{})
         class2 := class:
             var Data:?class1 = false
+
+array_ref(t:type) := class:
+    var Contents:[]t = ()
+
+assert:
+    IntArrayRef := array_ref(int){}
+    set IntArrayRef.Contents = array. 1
+    IntArrayRef.Contents = array. 1
+
+int_map_ref(t:type) := class:
+    var Contents:[int]t = map{}
+
+assert:
+    IntIntMapRef := int_map_ref(int){}
+    set IntIntMapRef.Contents = map{1 => 2}
+    IntIntMapRef.Contents = map{1 => 2}
+
+assert:
+    X := array_ref(int_map_ref(int)){}
+    set X.Contents = array. int_map_ref(int){}
+    set X.Contents[0].Contents = map{1 => 2}
+    X.Contents[0].Contents = map{1 => 2}

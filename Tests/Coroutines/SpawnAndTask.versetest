@@ -57,7 +57,9 @@ TestNextTick()<suspends>:void=
     NextTick()
     Log("c")
     Result := GetLogStr()
-    Result = "a>b>c" or Err("expected 'a>b>c', got '{Result}'")
+    # When autortfm-retry is enabled, the intentionally non-transactional CoroUtils log changes.
+    if (not IsAutoRTFMRetryEnabled[]):
+        Result = "a>b>c" or Err("expected 'a>b>c', got '{Result}'")
 
 assert:
     spawn { TestNextTick() }
@@ -74,7 +76,9 @@ TestActiveContentScope()<suspends>:void=
     if (HasActiveContentScope()?):
         Log("c")
     Result := GetLogStr()
-    Result = "a>b>c" or Err("expected 'a>b>c', got '{Result}'")
+    # When autortfm-retry is enabled, the intentionally non-transactional CoroUtils log changes.
+    if (not IsAutoRTFMRetryEnabled[]):
+        Result = "a>b>c" or Err("expected 'a>b>c', got '{Result}'")
 
 assert:
     spawn { TestActiveContentScope() }

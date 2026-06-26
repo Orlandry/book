@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 using { /Verse.org/Tests/VerseTestScriptCmd }
 
 # A simplifed variant of the code that triggered a bug for fields in interfaces overridden in a class by a field using accessors.

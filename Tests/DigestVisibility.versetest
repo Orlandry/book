@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # In this file, we'll make sure that the semantic analyzer detects cases
 # where dependencies of definitions are as accesible as the definitions themselves
 

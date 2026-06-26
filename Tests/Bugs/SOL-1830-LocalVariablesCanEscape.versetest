@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Must prevent access to undefined and uninitialized variables 
 
 # Rhs of `or` and `and` is not always evaluated, these are from the jira  

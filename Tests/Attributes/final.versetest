@@ -64,3 +64,67 @@ assert_semantic_error(3673){c := class<abstract>{F<final>():void}}
 assert_semantic_error(3568):
     c := class{X<final>:int=0}
     F():void=c{X:=1}
+
+# --- Interfaces ---
+
+# <final> is rejected on an interface type (only a class may be declared final)...
+assert_semantic_error(3596):
+    i_final := interface<final> {}
+
+# ...but is allowed on interface members, where it forbids overriding.
+assert_valid:
+    i_x := interface:
+        MethodX<final>():int = 42
+
+# A class may not override a member that an interface declared <final>.
+assert_semantic_error(3568):
+    i_x := interface:
+        DataMemberX<final>:int = 42
+    class_y := class(i_x):
+        DataMemberX<override>:int = 99
+
+assert_semantic_error(3568):
+    i_x := interface:
+        MethodX<final>():int = 42
+    class_y := class(i_x):
+        MethodX<override>():int = 99
+
+# A <final> interface member must still supply a body/value.
+assert_semantic_error(3673){i := interface{MethodX<final>():void}}
+assert_semantic_error(3673){i := interface{DataMemberX<final>:int}}
+
+# Finality propagates through an interface chain into the implementing class.
+assert_semantic_error(3568):
+    i_top := interface:
+        DataMemberX<final>:int = 10
+    i_mid := interface(i_top) {}
+    class_z := class(i_mid):
+        DataMemberX<override>:int = 20
+
+# <final> on an interface field also blocks an archetype override.
+assert_semantic_error(3568):
+    i_x := interface:
+        X<final>:int = 0
+    class_y := class(i_x) {}
+    F():void = class_y{X := 1}
+
+# --- Structs ---
+
+# <final> is rejected on a struct type, but allowed on a struct member.
+assert_semantic_error(3596):
+    s_final := struct<final> {}
+
+assert_valid:
+    s_x := struct:
+        DataMemberX<final>:int = 42
+
+assert_semantic_error(3673){s := struct{DataMemberX<final>:int}}
+
+# A <final> class method and a same-named interface method are qualified separately, so the final
+# method does not satisfy the interface requirement -- it stays unmet.
+assert_semantic_error(3591):
+    class_x := class:
+        MethodX<final>():int = 1
+    i_y := interface:
+        MethodX():int
+    class_z := class(class_x, i_y) {}

@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 super_class := class<unique>{I:int}
 sub_class := class(super_class) {}
 

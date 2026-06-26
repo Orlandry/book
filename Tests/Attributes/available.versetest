@@ -243,6 +243,42 @@ assert_semantic_error<depends_on_library>(3506):
             F():int=
                 Data.NonExistantReturns43()
 
+# Pure in-source coverage of the same shape: a definition exists by name in scope but is
+# version-gated above the consumer's UploadedAtFNVersion, so it is filtered during resolution
+# and surfaces as an unknown-identifier error (now annotated with the required version).
+assert_semantic_error(3506):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2930):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 3000}
+            VersionGatedFunc<public>():int = 42
+
+            Caller:int = VersionGatedFunc()
+
+# Same shape via a module + using: the using brings the module into scope, but the gated
+# member is still filtered, so the bare reference fails to resolve.
+assert_semantic_error(3506):
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=2930):
+        snippet:
+            using { /Verse.org/Native }
+            VersionGatedModule := module:
+                @available{MinUploadedAtFNVersion := 3000}
+                F<public>():int = 42
+
+            using { VersionGatedModule }
+            Caller:int = F()
+
+# Control: if the consumer's UploadedAtFNVersion meets the gate, the definition resolves
+# normally. Guards against the new classification branch hiding the visible case.
+assert_valid:
+    vpackage(P0, /APath, ?Scope:=InternalUser, ?UploadedAtFNVersion:=3000):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 3000}
+            VersionGatedFunc<public>():int = 42
+
+            Caller:int = VersionGatedFunc()
+
 assert:
     C:TestAvailableAttribute.MaybeAvailableClass := TestAvailableAttribute.MaybeAvailableClass{}
     C.Value13 = 13
@@ -428,3 +464,221 @@ assert_semantic_error(3593):
 assert_semantic_error(3593){vpackage(P0,/Verse.org/A,?Scope:=PublicAPI  ){snippet{using { /Verse.org/Native }; @available{MinUploadedAtFNVersion := 2} c<public> := class {}}}; vpackage(P1,/A,?Scope:=PublicAPI  , ?Dependencies:=(P0)){snippet{using{/Verse.org/A}; X<public>:?c = false}}}
 assert_semantic_error(3593){vpackage(P0,/Verse.org/A,?Scope:=InternalAPI){snippet{using { /Verse.org/Native }; @available{MinUploadedAtFNVersion := 2} c<public> := class {}}}; vpackage(P1,/A,?Scope:=InternalAPI, ?Dependencies:=(P0)){snippet{using{/Verse.org/A}; X<public>:?c = false}}}
 assert_valid               {vpackage(P0,/Verse.org/A,?Scope:=PublicAPI  ){snippet{using { /Verse.org/Native }; @available{MinUploadedAtFNVersion := 2} c<public> := class {}}}; vpackage(P1,/A,?Scope:=PublicUser , ?Dependencies:=(P0)){snippet{using{/Verse.org/A}; X<public>:?c = false}}}
+
+# Class and interface inheritance @available checks.
+# Supertype and super-interfaces are part of the child's digest signature, so the child must be
+# at-least as restricted as each parent. The general signature walk does not visit inheritance
+# edges, so these mismatches used to slip through and required manual fixes.
+
+# Class inheriting from a more-restricted class -- error.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            base<public> := class {}
+            child<public> := class(base) {}
+
+# Class inheriting from a more-restricted class with matching @available -- valid.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            base<public> := class {}
+            @available{MinUploadedAtFNVersion := 2}
+            child<public> := class(base) {}
+
+# Class strictly more-restricted than its supertype -- valid.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            base<public> := class {}
+            @available{MinUploadedAtFNVersion := 3}
+            child<public> := class(base) {}
+
+# Class inheriting from a more-restricted interface -- error. This shape (an unannotated child
+# inheriting from an @available-restricted parent) is the most common compile-time miss before
+# this check.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            i<public> := interface {}
+            c<public> := class(i) {}
+
+# Class inheriting from a more-restricted interface with matching @available -- valid.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            i<public> := interface {}
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class(i) {}
+
+# Class with two parent interfaces of different @available versions -- child must match the highest.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            i1<public> := interface {}
+            @available{MinUploadedAtFNVersion := 3}
+            i2<public> := interface {}
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class(i1, i2) {}
+
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            i1<public> := interface {}
+            @available{MinUploadedAtFNVersion := 3}
+            i2<public> := interface {}
+            @available{MinUploadedAtFNVersion := 3}
+            c<public> := class(i1, i2) {}
+
+# Interface inheriting from a more-restricted interface -- error.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            parent<public> := interface {}
+            child<public> := interface(parent) {}
+
+# Interface inheriting from a more-restricted interface with matching @available -- valid.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            parent<public> := interface {}
+            @available{MinUploadedAtFNVersion := 2}
+            child<public> := interface(parent) {}
+
+# Transitive inheritance: the digest emitter walks past parents that aren't in the consumer's
+# digest scope and references the nearest visible ancestor, so the check must follow the same
+# path. Here b is internal (skipped by the emitter), so c's emitted parent is a, and c must be
+# at-least as restricted as a.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            a<public> := class {}
+            b<internal> := class(a) {}
+            c<public> := class(b) {}
+
+# Same setup with c annotated to match a -- valid.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            a<public> := class {}
+            b<internal> := class(a) {}
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class(b) {}
+
+# Cascade: once the child class is annotated, the existing data-member type walk catches a
+# down-stream member whose declared type is the (now-restricted) child class.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            i<public> := interface {}
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class(i) {}
+            container<public> := class:
+                Member<public>:?c = false
+
+# Inheritance check is only emitted for InternalAPI/PublicAPI packages.
+assert_valid:
+    vpackage(P,/APath,?Scope:=InternalUser):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            base<public> := class {}
+            child<public> := class(base) {}
+
+# Epic_internal definitions ship in the InternalAPI digest and are subject to the same
+# @available filtering at downstream consumers' UploadedAtFNVersions as public definitions, so
+# their signatures need the check too. The shape an epic_internal class with an epic_internal
+# field whose type carries an @available the enclosing class does not match is the one this
+# section primarily guards against.
+
+# Epic_internal class field referencing a more-restricted class -- error.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class {}
+            container<epic_internal> := class:
+                Field<epic_internal>:?c = false
+
+# Epic_internal struct field referencing a more-restricted class -- error.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class {}
+            container<epic_internal> := struct:
+                Field:?c = false
+
+# Epic_internal struct with matching @available on the enclosing struct -- valid.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class {}
+            @available{MinUploadedAtFNVersion := 2}
+            container<epic_internal> := struct:
+                Field:?c = false
+
+# Epic_internal class inheriting from a more-restricted interface -- error.
+assert_semantic_error(3593):
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            i<public> := interface {}
+            c<epic_internal> := class(i) {}
+
+# Scope-restricted definitions (private/scoped) do not ship in any digest, so the @available
+# check should not fire for them.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            c<public> := class {}
+            container<public> := class:
+                Field<private>:?c = false
+
+# Internal-scope definitions are not visible in any digest, so their supertype reference can
+# never dangle for a consumer. Covers both interface-base and class-base variants.
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            base<public> := interface {}
+            child<internal> := class(base) {}
+
+assert_valid:
+    vpackage(P,/Verse.org/A,?Scope:=InternalAPI):
+        snippet:
+            using { /Verse.org/Native }
+            @available{MinUploadedAtFNVersion := 2}
+            base<public> := class {}
+            child<internal> := class(base) {}

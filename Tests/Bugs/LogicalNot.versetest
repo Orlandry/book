@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Test that this produces a syntax error instead of crashing.
 assert_syntax_error(3100){"1 != 2"}
 

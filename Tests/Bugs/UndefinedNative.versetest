@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 <#> assert_link_error(todo):
     
     UndefinedNativeClass<native> := class:

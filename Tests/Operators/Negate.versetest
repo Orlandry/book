@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert{ x:=-(1+2+4); x=-7 }
 assert{ x:=-1+2+4; x=5 }
 assert{ x:=-1; y:=-2; -x-y=3 }

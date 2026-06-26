@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 <#>
     Test all the various combinations of attribute scope attributes and uses of those attributes in different scopes.
 

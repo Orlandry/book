@@ -1,0 +1,27 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+IsDebugStackTraceSupported()<computes>:logic =
+    bp_vm_only    { IsDebuggerEnabled() }
+    verse_vm_only { true }
+
+# Stack frames should appear in the correct order in the trace.
+C(X:int):[]string =
+    DebugStackTrace()
+B(X:int):[]string =
+    C(X)
+A(X:int):[]string =
+    B(X)
+
+assert:
+    if (IsDebugStackTraceSupported()?):
+        Frames := A(0)
+        bp_vm_only:
+            Frames[0] = "(/Verse.org/VerseTests:)C(:int):11"
+            Frames[1] = "(/Verse.org/VerseTests:)B(:int):13"
+            Frames[2] = "(/Verse.org/VerseTests:)A(:int):15"
+        verse_vm_only:
+            Frames[0] = "(/Verse.org/VerseTests:)C(:int):11"
+            Frames[1] = "(/Verse.org/VerseTests:)B(:int):12"  # TODO(SOL-9406): VVM incorrectly uses function declaration line
+            Frames[2] = "(/Verse.org/VerseTests:)A(:int):14"  # TODO(SOL-9406): VVM incorrectly uses function declaration line

@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 assert { 1.0/0.0 = 1.0/0.0 }
 assert { 0.0/0.0 = 0.0/0.0 }
 

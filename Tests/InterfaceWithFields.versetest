@@ -316,6 +316,20 @@ assert_semantic_error(3523, 3532):
     I0 := interface {V:C0=C0{}}
     I1 := interface(I0) {V<override>:C1=C1{}}
 
+# Shadowing an inherited data member requires the <override> attribute; without it the redeclaration
+# is an error -- both across an interface->interface edge and when a class implements an interface.
+assert_semantic_error(3532):
+    I0 := interface {Value:int}
+    I1 := interface(I0) {Value:int}
+
+assert_semantic_error(3532):
+    I0 := interface {var Value:int}
+    I1 := interface(I0) {var Value:int}
+
+assert_semantic_error(3532):
+    I0 := interface {Value:int}
+    C0 := class(I0) {Value:int}
+
 # A class can override an interface field, e.g., to give it a new default value.
 Class50 := class {Value:int=10}
 

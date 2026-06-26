@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Test the different forms of definitions.
 
 assert{x     := 1; x = 1}

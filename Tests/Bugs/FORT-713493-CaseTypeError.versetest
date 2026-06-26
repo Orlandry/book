@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Accidental use of - instead of = puts the "body" in the return type expression
 assert_semantic_error(3502, 3598):
     F(X:int):string - case(X):

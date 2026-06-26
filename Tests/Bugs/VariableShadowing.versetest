@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Shadowing parent / child class
 assert_semantic_error(3532)
 {

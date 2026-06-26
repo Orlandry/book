@@ -1,0 +1,12 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
+# Verifies that PrintScriptCallstack includes the Verse callstack in both BPVM and VerseVM.
+
+using { /Verse.org/Tests/VerseTestScriptCmd }
+
+# This is here so that we have a named non-native function in the callstack, not just `assert0`.
+RunScriptCallstackTest():logic =
+    TestPrintScriptCallstack()
+
+assert:
+    RunScriptCallstackTest()?

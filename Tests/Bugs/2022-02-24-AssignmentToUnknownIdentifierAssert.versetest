@@ -1,3 +1,5 @@
+# Copyright Epic Games, Inc. All Rights Reserved.
+
 # Assignment to an expression that contains an error (e.g. an unknown
 # identifier) shouldn't assert if its type is joined with another.
 assert_semantic_error(3506):

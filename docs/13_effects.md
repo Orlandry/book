@@ -929,7 +929,7 @@ weapon:=struct<computes>{Type:weapon_type,Dammage:int}
 weapon_type:=enum:
     Sword
 -->
-<!-- 32 -->
+<!-- 321 -->
 ```verse
 # API promises it might read state
 GetDefaultWeapon<public>()<reads>:weapon =

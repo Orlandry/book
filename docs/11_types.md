@@ -1594,9 +1594,8 @@ compile-time type safety and runtime flexibility.
 The `subtype(T)` type constructor represents runtime type values that
 are subtypes of `T`. Unlike `concrete_subtype` and `castable_subtype`,
 which are specialized for classes and interfaces, `subtype(T)` works
-with a wide range of types in Verse, including primitives and enums,
-not just classes and interfaces. (Collection and function types
-currently have limitations. See the note below.)
+with **any type** in Verse, including primitives, enums, collections,
+and function types.
 
 <!--versetest
 animal := class<computes> {}

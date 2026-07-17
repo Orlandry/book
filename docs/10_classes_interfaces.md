@@ -2111,7 +2111,6 @@ Tree := nested_list(int){
 Polymorphic recursion occurs when a parametric type references itself
 with a **different type argument**:
 
-<!--NoCompile-->
 <!-- 73-->
 ```verse
 # Invalid: Type parameter changes
@@ -3520,7 +3519,6 @@ finds the `<final_super>` class in the hierarchy for a given
 instance. This enables component architectures where you need to
 identify the "category" of a component at runtime:
 
-<!-- NoCompile-->
 <!-- 126-->
 ```verse
 #            base_type<castable>

@@ -415,7 +415,6 @@ The `using` directive is a statement-level declaration that must
 appear at the top level of your code. You cannot use it as an
 expression or embed it in other expressions:
 
-<!--NoCompile-->
 <!-- 11 -->
 ```verse
 # Invalid: using in expression context

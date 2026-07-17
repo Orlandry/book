@@ -6,12 +6,12 @@ const { spawn, spawnSync } = require('child_process');
 
 
 // Available Verse VMs, we search the $PATH first. If the executable cannot be
-// found then we default to Jan's path.
-const testScriptVM = findExecutable("VerseTestScriptCmdVM.exe",
-                                    "/mnt/c/fortniteMain/Engine/Restricted/NotForLicensees/Binaries/Win64/VerseTestScriptCmdVM.exe"
+// found then we default to Engine/Binaries/Win64 (moved for UE6).
+const testScriptVM = findExecutable("VerseTestScriptCmdVM-Win64-Shipping.exe",
+                                    "/mnt/c/fortniteMain/Engine/Binaries/Win64/VerseTestScriptCmdVM-Win64-Shipping.exe"
                                    );
 const clrVM = findExecutable("VerseCLRVM-Win64-Shipping.exe",
-                             "/mnt/c/fortniteMain/Engine/Restricted/NotForLicensees/Binaries/Win64/VerseCLRVM-Win64-Shipping.exe"
+                             "/mnt/c/fortniteMain/Engine/Binaries/Win64/VerseCLRVM-Win64-Shipping.exe"
                             );
 
 const wslPath = findExecutable("wslpath", "/usr/bin/wslpath");
@@ -39,8 +39,8 @@ function printUsage() {
   console.log('');
   console.log('Runs Verse tests on a file or all .verse/.versetest files in a directory.');
   console.log('Automatically selects VM based on file extension:');
-  console.log('  .verse      -> CLR VM');
-  console.log('  .versetest  -> TestScript VM');
+  console.log('  .verse      -> CLR VM (Engine/Binaries/Win64)');
+  console.log('  .versetest  -> TestScript VM (Engine/Binaries/Win64)');
   console.log('');
   console.log('Options:');
   console.log('  --verbose   Show detailed error messages for failures');
@@ -172,10 +172,10 @@ function isSuccess(output) {
 function runTest(filePath) {
   return new Promise((resolve) => {
     const isTest = filePath.endsWith('.versetest');
-      // Both VMs require absolute windows paths when running under WSL.
-      // VerseTestScriptCmdVM will silently do nothing and succeed with a Linux path.
-      // VerseCLRVM will fail with "Error getting text contents" with a Linux path.
-      // This call to wslpath converts a linux path to a windows path.
+    // Both VMs require absolute windows paths when running under WSL.
+    // VerseTestScriptCmdVM will silently do nothing and succeed with a Linux path.
+    // VerseCLRVM will fail with "Error getting text contents" with a Linux path.
+    // This call to wslpath converts a linux path to a windows path.
     const canonicalPath = fs.realpathSync(filePath);
 
     let targetPath = canonicalPath;

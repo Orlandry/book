@@ -290,7 +290,6 @@ effect system accounts for this: the `<writes>` effect implies
 evaluation. The following illustrates a cyclic definition when `X` is
 larger than 0:
 
-<!--NoCompile-->
 <!-- 07-->
 ```verse
 var X:int = 0

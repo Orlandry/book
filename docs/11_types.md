@@ -2109,8 +2109,8 @@ assert:
             Specific
         else:
             Instance
-<#
 -->
+<!--NoCompile-->
 <!-- 138 -->
 ```verse
 entity := class{}
@@ -2131,10 +2131,6 @@ CreateAndCast(CompType:castable_concrete_subtype(component)):component =
     else:
         Instance
 ```
-<!-- ERROR:
-Line 23: Script Error 3100: vErr:S04: Block comment beginning at "<#" never ends
--->
-#>
 
 ### classifiable_subset
 

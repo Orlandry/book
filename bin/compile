@@ -16,7 +16,10 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 // -- HARD-CODED COMMAND ---------------------------------------------------------
-const CMD = 'verseCLRVM.exe'; // must exist on PATH, .exe for wsl to find the windows binary
+// Note: First tries to find VerseCLRVM-Win64-Shipping.exe in PATH,
+// then falls back to the standard Engine/Binaries location
+const CMD = 'VerseCLRVM-Win64-Shipping.exe';
+const FALLBACK_CMD = '/mnt/c/fortniteMain/Engine/Binaries/Win64/VerseCLRVM-Win64-Shipping.exe';
 const ARG_TEMPLATE = file => `--open=${file}`;
 // -------------------------------------------------------------------------------
 
@@ -50,7 +53,7 @@ async function main() {
   for (const file of files) {
     const res = await runCommand(file);
     results.push(res);
-    console.log(`${res.success ? '? success' : '? fail'} — ${path.basename(file)}`);
+    console.log(`${res.success ? '? success' : '? fail'} ï¿½ ${path.basename(file)}`);
   }
 
   const successes = results.filter(r => r.success);
@@ -108,10 +111,24 @@ Options:
 
 function runCommand(file) {
   return new Promise(resolve => {
+    // Try CMD first (in PATH), if it fails try FALLBACK_CMD
     const child = spawn(CMD, [ARG_TEMPLATE(file)], { stdio: 'ignore', shell: false });
 
     child.on('error', err => {
-      resolve({ file, success: false, code: null, error: err.message });
+      // If CMD not found in PATH, try fallback
+      if (err.code === 'ENOENT') {
+        const fallbackChild = spawn(FALLBACK_CMD, [ARG_TEMPLATE(file)], { stdio: 'ignore', shell: false });
+
+        fallbackChild.on('error', fallbackErr => {
+          resolve({ file, success: false, code: null, error: fallbackErr.message });
+        });
+
+        fallbackChild.on('exit', code => {
+          resolve({ file, success: code === 0, code, error: null });
+        });
+      } else {
+        resolve({ file, success: false, code: null, error: err.message });
+      }
     });
 
     child.on('exit', code => {

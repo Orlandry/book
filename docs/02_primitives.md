@@ -218,9 +218,29 @@ Ceil((-5) / -2) = 3     # 2.5 → 3
 ```
 
 `Floor` rounds toward negative infinity, *not* toward zero. This
-matches mathematical convention but differs from truncation.  When the
+matches mathematical convention but differs from truncation. When the
 argument is a rational, `Floor` does not fail, but if passed a `float`
 it is a `decides` function.
+
+When `Floor` or `Ceil` is applied to an integer-valued rational (one
+that reduces to a whole number), the result is that integer:
+
+<!--versetest-->
+<!-- 11001 -->
+```verse
+# Integer-valued rationals
+PositiveRational:rational = 5
+NegativeRational:rational = -5
+
+Floor(PositiveRational) = 5   # Returns the integer 5
+Ceil(PositiveRational) = 5    # Returns the integer 5
+Floor(NegativeRational) = -5  # Returns the integer -5
+Ceil(NegativeRational) = -5   # Returns the integer -5
+
+# Also works for rationals that reduce to integers
+Floor(10 / 2) = 5             # 10/2 = 5/1, returns 5
+Ceil(10 / 2) = 5              # 10/2 = 5/1, returns 5
+```
 
 Rationals can be used as parameter and return types:
 

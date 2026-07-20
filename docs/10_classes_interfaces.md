@@ -3577,6 +3577,59 @@ field to be customizable during construction, don't mark it as
 `<final>`. Final fields must also provide a default value — you cannot
 declare a final field without initializing it.
 
+#### Final on Interface Members
+
+While `<final>` cannot be applied to interface or struct *types*
+themselves, it can be used on interface *members* to prevent overriding
+in implementing classes. Final interface members must provide a complete
+implementation (body for methods, value for fields):
+
+<!--versetest-->
+<!-- 124001 -->
+```verse
+base_behavior := interface:
+    # Final method with default implementation
+    GetID<final>():int = 42
+
+    # Final field with default value
+    MaxCount<final>:int = 100
+
+    # Non-final method - can be overridden
+    Process():void
+
+concrete_impl := class(base_behavior):
+    # Can implement Process
+    Process<override>():void = {}
+
+    # Cannot override GetID or MaxCount - they're final
+    # GetID<override>():int = 99  # ERROR
+```
+
+Final members in interfaces propagate through interface inheritance.
+When an interface extends another interface with final members, those
+members remain final and cannot be overridden by any implementing
+classes:
+
+<!--versetest-->
+<!-- 124002 -->
+```verse
+base := interface:
+    GetVersion<final>():int = 1
+
+derived := interface(base):
+    GetName():string
+
+impl := class(derived):
+    # Must implement GetName
+    GetName<override>():string = "Implementation"
+
+    # GetVersion remains final from base
+    # GetVersion<override>():int = 2  # ERROR
+```
+
+**Important:** `<final>` on interface/struct types themselves produces
+an error. Use `<final>` only on their members.
+
 The related `<final_super>` specifier does **not** prevent further
 subclassing. Instead, it guarantees that all subclasses of this class
 will always directly inherit from it — there will be no intermediate

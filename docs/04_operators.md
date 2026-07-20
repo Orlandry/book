@@ -127,6 +127,80 @@ set Items += (6, 7)       # Items is now array{1, 2, 3, 4, 5, 6, 7}
 # set IntValue /= 2  # Compile error!
 ```
 
+### Bitwise Operations
+
+Verse provides bitwise operations for integers through four intrinsic
+functions: `BitAnd`, `BitOr`, `BitXor`, and `BitNot`. These operate on
+the two's complement binary representation of integers.
+
+<!--versetest-->
+<!-- 02001 -->
+```verse
+# Bitwise AND - sets bit only if both inputs have it set
+BitAnd(12, 10) = 8      # 1100 & 1010 = 1000
+BitAnd(0, 12345) = 0    # All bits cleared by zero
+BitAnd(-1, 42) = 42     # -1 has all bits set (identity)
+
+# Bitwise OR - sets bit if either input has it set
+BitOr(12, 10) = 14      # 1100 | 1010 = 1110
+BitOr(0, 12345) = 12345 # Identity with zero
+BitOr(-1, 42) = -1      # -1 has all bits set
+
+# Bitwise XOR - sets bit if inputs differ
+BitXor(12, 10) = 6      # 1100 ^ 1010 = 0110
+BitXor(42, 42) = 0      # Same values cancel out
+BitXor(-1, 0) = -1      # Flips all bits of zero
+
+# Bitwise NOT - inverts all bits: ~X = -X - 1
+BitNot(0) = -1          # All bits flip
+BitNot(-1) = 0          # All bits flip back
+BitNot(12) = -13        # -(12 + 1) = -13
+```
+
+**Important:** Bitwise operations work only with `int` type, not
+`float` or `rational`. The operations follow two's complement
+arithmetic, where negative numbers are represented with the sign bit
+set and remaining bits inverted plus one.
+
+Common patterns using bitwise operations:
+
+<!--versetest-->
+<!-- 02002 -->
+```verse
+# Check if a bit is set (test bit at position N)
+Flags := 10                         # 10 = binary 1010: bits 1 and 3 set
+BitAnd(Flags, 2) = 2                # Bit 1 is set (2 = binary 0010)
+BitAnd(Flags, 4) = 0                # Bit 2 is clear (4 = binary 0100)
+
+# Set a bit (turn on bit at position N)
+BitOr(Flags, 1) = 11                # Result: 11 (binary 1011)
+
+# Clear a bit (turn off bit at position N)
+BitAnd(Flags, BitNot(8)) = 2        # Result: 2 (binary 0010)
+
+# Toggle a bit (flip bit at position N)
+BitXor(Flags, 1) = 11               # Result: 11 (binary 1011)
+
+# Test even/odd (check if lowest bit is set)
+BitAnd(Flags, 1) = 0                # Even (lowest bit clear)
+```
+
+De Morgan's laws apply to bitwise operations:
+
+<!--versetest-->
+<!-- 02003 -->
+```verse
+# NOT(A AND B) = (NOT A) OR (NOT B)
+BitNot(BitAnd(15, 9)) = BitOr(BitNot(15), BitNot(9))
+
+# NOT(A OR B) = (NOT A) AND (NOT B)
+BitNot(BitOr(15, 9)) = BitAnd(BitNot(15), BitNot(9))
+```
+
+On the Verse VM, bitwise operations support arbitrarily large integers
+(bignums beyond 2^64). On the Blueprint VM, values must fit within the
+64-bit signed integer range (-2^63 to 2^63-1).
+
 ## Comparison Operators
 
 Comparison operators test relationships between values and are failable expressions that succeed or fail based on the comparison result.

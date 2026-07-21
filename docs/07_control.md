@@ -258,6 +258,69 @@ Result:any = if (UseNumber?) then 42 else "text"
 All branches must produce a value for the `if` to be used as an
 expression.
 
+### Handling Only Failures
+
+A common pattern is to handle only the failure case of a `<decides>`
+expression, letting success continue without additional logic. The
+idiomatic way to express this is with `if (Condition): else:`:
+
+<!--versetest-->
+<!-- 14001 -->
+```verse
+ProcessData()<decides><transacts>:void = {}
+
+HandleWithFailureCase()<transacts>:void =
+    if (ProcessData[]):
+        # Success - no additional logic needed
+    else:
+        # Handle the failure case
+        Print("Processing failed")
+```
+
+When the condition succeeds, execution continues after the `if`
+statement. When it fails, the `else` block handles the error. This
+pattern is clearer than alternatives that might seem equivalent but
+behave differently.
+
+A tempting but sometimes incorrect
+pattern is to use `not` to check for failure:
+
+<!--NoCompile-->
+```verse
+# Causes unwanted rollback
+if (not ProcessData[]):
+    Print("Processing failed")
+```
+
+This fails because when `ProcessData[]` succeeds, `not true` fails,
+causing the outer `if` to fail and roll back any transactional effects
+from `ProcessData`. Safer patterns are:
+
+<!--versetest-->
+<!-- 14002 -->
+```verse
+var Counter:int = 0
+
+IncrementCounter()<decides><transacts>:void =
+    set Counter += 1
+
+# Correct: if (Expr): else: for handling failures
+TestIfElse():void =
+    set Counter = 0
+    if (IncrementCounter[]):
+    else:
+        Print("Failed")
+    # Counter is 1 - effect preserved
+
+# Correct: logic{} to convert to boolean
+TestLogic():void =
+    set Counter = 0
+    Result := logic{IncrementCounter[]}
+    if (not Result?):
+        Print("Failed")
+    # Counter is 1 - effect preserved
+```
+
 ## Case Expressions
 
 When you need to make decisions based on multiple possible values, the

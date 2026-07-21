@@ -1,5 +1,13 @@
 # Documentation Coverage TODO
 
+## High Priority Gaps
+
+### Verse spec bug: if-without-then rewrite
+- **Reference**: Screenshot from John Stiles
+- [ ] Spec shows incorrect rewrite with undefined variable `s1` (should be `y`)
+- `if(s0){s1}` rewrites to `if(exists y. y=s0){s1}else{}`
+- This is a spec documentation bug, not a language feature gap
+
 ### concrete_subtype and castable_concrete_subtype
 - **Test**: Tests/Castable.versetest
 - [ ] Only `castable_subtype` is documented

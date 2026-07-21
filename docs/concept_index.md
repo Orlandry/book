@@ -28,7 +28,7 @@ This index provides quick access to key concepts, language features, and importa
 ### Type Features
 - **subtyping** - type relationships: [Type System - Understanding Subtyping](11_types.md#understanding-subtyping)
 - **comparable** - equality testing: [Type System](11_types.md)
-- **parametric types** - generics: [Classes - Parametric Classes](10_classes_interfaces.md#parametric-classes), [Type System](11_types.md)
+- **parametric types** - generics: [Classes - Parametric Classes](10_classes_interfaces.md#parametric-classes), [Structs - Parametric Structs](09_structs_enums.md#parametric-structs), [Type System](11_types.md)
 - **type{}** - type expressions: [Expressions](01_expressions.md), [Primitives - Type type](02_primitives.md#type-type), [Type System](11_types.md)
 - **where clauses** - type constraints: [Overview](00_overview.md), [Functions](06_functions.md), [Classes - Advanced Type Constraints](10_classes_interfaces.md#advanced-type-constraints), [Type System](11_types.md)
 

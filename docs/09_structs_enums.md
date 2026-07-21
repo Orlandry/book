@@ -137,6 +137,64 @@ PlayerData : weak_map(player, player_stats) = map{}
 
 Once published, persistable structs cannot be modified, ensuring data compatibility across game updates.
 
+### Parametric Structs
+
+Like classes, structs can be parametric (generic). A parametric struct declares one or more type parameters, allowing the same struct definition to work with different types. This is useful when you want a lightweight value type that is reusable across different data types without defining a full class.
+
+A parametric struct takes type parameters in its definition, just like a parametric class:
+
+<!--NoCompile-->
+<!-- 05 -->
+```verse
+# A wrapper that can hold a value of any type
+wrapper(t:type) := struct:
+    Value : t
+```
+
+The type parameter `t` can be used anywhere a concrete type would appear in field declarations. When creating instances, you provide the concrete type:
+
+<!--versetest
+wrapper(t:type) := struct:
+    Value : t
+-->
+<!-- 06 -->
+```verse
+IntWrapped := wrapper(int){Value := 42}
+FloatWrapped := wrapper(float){Value := 3.14}
+StringWrapped := wrapper(string){Value := "hello"}
+```
+
+Parametric structs work naturally with parametric functions. A function can accept any instantiation of a parametric struct by using a `where` clause to capture the type parameter:
+
+<!--versetest
+wrapper(t:type) := struct:
+    Value : t
+-->
+<!-- 07 -->
+```verse
+Unwrap(W:wrapper(t) where t:type):t = W.Value
+
+IntValue := Unwrap(wrapper(int){Value := 10})       # IntValue is 10
+FloatValue := Unwrap(wrapper(float){Value := 2.0})   # FloatValue is 2.0
+```
+
+Since the type parameter is preserved through instantiation, parametric structs can be nested. Here, a `wrapper` holds another `wrapper` as its value:
+
+<!--versetest
+wrapper(t:type) := struct:
+    Value : t
+
+Unwrap(W:wrapper(t) where t:type):t = W.Value
+-->
+<!-- 08 -->
+```verse
+Nested := wrapper(wrapper(int)){Value := wrapper(int){Value := 11}}
+Inner := Unwrap(Nested)      # Inner is wrapper(int){Value := 11}
+Result := Unwrap(Inner)      # Result is 11
+```
+
+Parametric structs retain all the characteristics of regular structs — they are value types with public, immutable fields and no methods or inheritance. The only addition is the ability to parameterize field types. Note that parametric structs cannot be marked `<persistable>` — persistence requires concrete, fixed types that can be serialized reliably across game updates.
+
 ## Enums
 
 Enums define types with a fixed set of named values, perfect for representing states, types, or any concept with a known, finite set of alternatives. They make code more readable by replacing magic numbers with meaningful names and provide compile-time safety by restricting values to the defined set.

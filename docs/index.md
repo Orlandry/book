@@ -1,9 +1,5 @@
 # Verse Language Documentation
 
-!!! warning
-    This is an early draft of the Book of Verse. Suggestions
-    for improvements are welcome. Frequent updates are to be expected.
-
 This documentation provides an in-depth look at the Verse programming
 language, its philosophy, and core concepts.
 

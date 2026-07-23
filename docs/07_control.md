@@ -860,9 +860,6 @@ booleans, types, or objects are not supported.
 
 ## First Expressions
 
-!!! note "Unreleased Feature"
-    `first` expressions have not yet been released. This section documents planned functionality that is not currently available.
-
 The `first` expression is similar to `for`, but instead of evaluating
 the body for every iteration of the domain clause, it evaluates only
 the **first** iteration of the domain clause that succeeds. Instead

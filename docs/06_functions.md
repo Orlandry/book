@@ -102,7 +102,7 @@ Configure(?Option1:="test", 42, ?Option2:=true)  # ERROR
 ```
 <!-- #>-->
 
-Default values are evaluated in the function's defining scope; they
+Verse evaluates default values in the function's defining scope; they
 can reference:
 
   - Module-level definitions
@@ -556,7 +556,7 @@ because arrays can also be called with the same syntax.
 
 ### Evaluation Order
 
-Arguments are evaluated in a specific order to maintain predictable behavior:
+Verse evaluates arguments in a specific order to maintain predictable behavior:
 
 1. *Positional arguments*: Left to right in the call
 2. *Named arguments*: Left to right as encountered in the call

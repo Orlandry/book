@@ -178,7 +178,7 @@ X = 2 and Y = 0
 
 This pattern is useful when the new value requires intermediate computations or when you need multiple side effects during assignment.
 
-**Important:** The left-hand side of `set` is evaluated before the block executes, and the block's return value is what gets assigned. This can lead to confusing behavior in certain cases:
+**Important:** Verse evaluates the left-hand side of `set` before the block executes, and assigns the block's return value. This can lead to confusing behavior in certain cases:
 
 <!--versetest-->
 <!-- 10 -->
@@ -388,7 +388,7 @@ set Player2.Health = 75.0  # OK: Modifies the new object
 ```
 <!-- #> -->
 
-The key insight: for classes, field mutability is determined at class definition time, not at variable declaration time. A `var` field is always mutable, regardless of how you access it. A non-`var` field is always immutable, even if accessed through a `var` variable.
+The key insight: for classes, the class definition determines field mutability at definition time, not at variable declaration time. A `var` field is always mutable, regardless of how you access it. A non-`var` field is always immutable, even if accessed through a `var` variable.
 
 <!--versetest
 point:=struct<computes>{X:float}
@@ -936,7 +936,7 @@ S.M = 1 # Succeeds
 not (Old = S) # Structs do not pass as references
 ```
 
-When a new struct is constructed, it is assigned the updated value and copied other fields.
+When a new struct is constructed, Verse assigns it the updated value and copies other fields.
 If there is other places referencing the old struct, they will not have the updated values (unlike classes)
 
 This restriction ensures that only predictable, effect-free structs can be mutated.

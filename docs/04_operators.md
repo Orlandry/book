@@ -37,7 +37,7 @@ Although `.` appears *between* `Player` and `Respawn` in `Player.Respawn()`, it 
 
 ## Precedence
 
-When multiple operators appear in the same expression, they are evaluated according to their precedence level. Higher precedence operators are evaluated first. Operators with the same precedence are evaluated left to right (except for assignment and unary operators which are right-associative).
+When multiple operators appear in the same expression, Verse evaluates them according to their precedence level. Higher precedence operators evaluate first. Operators with the same precedence evaluate left to right (except for assignment and unary operators which are right-associative).
 
 The precedence levels from highest to lowest are:
 

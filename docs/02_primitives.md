@@ -3,8 +3,8 @@
 Verse provides a rich set of primitive types that cover fundamental
 programming needs. The numeric types `int`, `float`, and `rational`
 handle mathematical operations, counters, and measurements. The
-`logic` type represents boolean values for conditions and flags. Text
-is handled through `char`, `char32`, and `string` types for character
+`logic` type represents boolean values for conditions and flags. The
+`char`, `char32`, and `string` types handle text for character
 data, player names, and messages. Two special types, `any` and `void`,
 serve unique roles in the type hierarchy as the supertype of all types
 and the empty type respectively.
@@ -99,8 +99,8 @@ For integers, the operator `/` is failable, and the result is a
 
 The `rational` type represents exact fractions as ratios of
 integers. Unlike `int` or `float`, you cannot write a `rational`
-literal directly—rationals are created through integer division using
-the `/` operator.
+literal directly—integer division using the `/` operator creates
+rationals.
 
 <!--versetest-->
 <!-- 04 -->
@@ -222,8 +222,8 @@ matches mathematical convention but differs from truncation. When the
 argument is a rational, `Floor` does not fail, but if passed a `float`
 it is a `decides` function.
 
-When `Floor` or `Ceil` is applied to an integer-valued rational (one
-that reduces to a whole number), the result is that integer:
+When you apply `Floor` or `Ceil` to an integer-valued rational (one
+that reduces to a whole number), it returns that integer:
 
 <!--versetest-->
 <!-- 11001 -->
@@ -815,7 +815,7 @@ not GotIt?                                        # and this fails too
 Text is represented in terms of characters and strings.  A `char` is a
 single **UTF-8 code unit** (not a full Unicode code point). A string
 is therefore an array of characters, written as `[]char`. For
-convenience, the type alias `string` is provided for `[]char`:
+convenience, Verse provides the type alias `string` for `[]char`:
 
 <!--versetest-->
 <!-- 38 -->
@@ -824,7 +824,7 @@ MyName :string = "Joseph"
 MyAlterEgo := "José"
 ```
 
-UTF-8 is used as the character encoding scheme. Each UTF-8 code unit
+Verse uses UTF-8 as the character encoding scheme. Each UTF-8 code unit
 is one byte. A Unicode code point may require between one and four
 code units. Code points with lower values use fewer bytes, while
 higher values require more.
@@ -896,7 +896,7 @@ Formatting := "My name is {MyName} but my alter ego is {MyAlterEgo}."
 
 Interpolation works for any value that has a `ToString()` function in scope.
 
-Literal characters are written with single quotes. The type depends on
+Write literal characters with single quotes. The type depends on
 whether the character falls within the ASCII range (`U+0000`–`U+007F`)
 or not:
 
@@ -1425,7 +1425,7 @@ Main(Arg : int) : void =
         letter{Value := 'D'}
 ```
 
-In this example, `X` is assigned either a value of type `letters` or
+In this example, the code assigns `X` either a value of type `letters` or
 of type `letter`. Since these two types are unrelated, the compiler
 assigns `X` the type `any`, which is their lowest common supertype.
 
@@ -1462,7 +1462,7 @@ a function that accepts any value and evaluates to `false`.
 
 This design allows a function with return type `void` to have a body
 that evaluates to any type, while ensuring that callers cannot use
-the result. The value produced by the body is passed to `void`, which
+the result. The body passes the value it produces to `void`, which
 discards it and returns `false`.
 
 A function whose purpose is to perform an effect, rather than compute
